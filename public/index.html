@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Amplixity GTM Workshop Tool</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -387,6 +388,133 @@
   .view-toggle-btn { padding: 6px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 500; cursor: pointer; border: 0.5px solid var(--color-border-hover); background: var(--color-card); color: #fff; transition: all 0.15s; }
   .view-toggle-btn.active { background: var(--color-purple); border-color: var(--color-purple); }
 
+
+  /* Markdown rendering */
+  .md-body { font-size: 15px; line-height: 1.8; color: var(--color-text); }
+  .md-body h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 20px 0 10px; }
+  .md-body h2 { font-size: 17px; font-weight: 600; color: #fff; margin: 18px 0 8px; border-bottom: 0.5px solid var(--color-border); padding-bottom: 6px; }
+  .md-body h3 { font-size: 15px; font-weight: 600; color: var(--color-purple-light); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .md-body p { margin: 0 0 12px; }
+  .md-body strong { color: #fff; font-weight: 600; }
+  .md-body em { color: var(--color-text-muted); font-style: italic; }
+  .md-body ul { list-style: none; padding: 0; margin: 8px 0 16px; }
+  .md-body ul li { padding: 4px 0 4px 20px; position: relative; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
+  .md-body ul li::before { content: "→"; position: absolute; left: 0; color: var(--color-purple-light); font-size: 12px; top: 6px; }
+  .md-body ul li.num::before { content: counter(li); counter-increment: li; background: var(--color-purple); color: #fff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; top: 5px; }
+  .md-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+  .md-body table td { padding: 8px 12px; border: 0.5px solid var(--color-border); }
+  .md-body table tr:first-child td { background: var(--color-purple-faint); font-weight: 600; color: var(--color-purple-light); }
+  .md-body table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .md-body hr { border: none; border-top: 0.5px solid var(--color-border); margin: 20px 0; }
+
+
+  /* Client picker */
+  .client-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
+  .client-card { display: flex; align-items: center; justify-content: space-between; background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; gap: 12px; }
+  .client-card:hover { border-color: var(--color-purple); }
+  .client-name { font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 3px; }
+  .client-meta { font-size: 12px; color: var(--color-text-muted); }
+
+
+  /* ── Visual Output Components ── */
+  .viz-wrap { padding: 0 0 32px; }
+  .viz-section { margin-bottom: 28px; animation: slideUp 0.4s ease both; }
+  .viz-section:nth-child(2) { animation-delay: 0.05s; }
+  .viz-section:nth-child(3) { animation-delay: 0.10s; }
+  .viz-section:nth-child(4) { animation-delay: 0.15s; }
+  .viz-section:nth-child(5) { animation-delay: 0.20s; }
+  .viz-section:nth-child(6) { animation-delay: 0.25s; }
+
+  .viz-header { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-purple-light); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .viz-header::after { content:''; flex:1; height:0.5px; background: linear-gradient(90deg, rgba(176,110,243,0.3), transparent); }
+
+  /* Stat cards */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+  .stat-card { background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 16px 18px; position: relative; overflow: hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background: linear-gradient(90deg, var(--color-purple), var(--color-purple-light)); }
+  .stat-card.green::before { background: linear-gradient(90deg, #22c55e, #4ade80); }
+  .stat-card.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+  .stat-card.red::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+  .stat-val { font-size: 28px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--color-text-muted); line-height: 1.4; }
+  .stat-badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-top: 8px; }
+  .stat-badge.high { background: rgba(239,68,68,0.2); color: #f87171; }
+  .stat-badge.medium { background: rgba(245,158,11,0.2); color: #fbbf24; }
+  .stat-badge.low { background: rgba(34,197,94,0.2); color: #4ade80; }
+  .stat-badge.good { background: rgba(34,197,94,0.2); color: #4ade80; }
+
+  /* Pipeline bar chart */
+  .pipeline-bars { display: flex; flex-direction: column; gap: 10px; }
+  .pipeline-bar-row { display: flex; align-items: center; gap: 12px; }
+  .pipeline-bar-label { font-size: 13px; color: var(--color-text-muted); width: 120px; flex-shrink: 0; text-align: right; }
+  .pipeline-bar-track { flex: 1; height: 32px; background: rgba(255,255,255,0.04); border-radius: 6px; overflow: hidden; position: relative; }
+  .pipeline-bar-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; padding: 0 12px; font-size: 13px; font-weight: 600; color: #fff; transition: width 1s cubic-bezier(.22,1,.36,1); }
+  .pipeline-bar-pct { font-size: 13px; color: var(--color-text-muted); width: 40px; text-align: right; }
+
+  /* Score bars */
+  .score-display { display: flex; flex-direction: column; gap: 14px; }
+  .score-item { }
+  .score-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .score-item-label { font-size: 14px; font-weight: 500; color: var(--color-text); }
+  .score-item-val { font-size: 18px; font-weight: 700; color: #fff; }
+  .score-track { height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+  .score-fill { height: 8px; border-radius: 4px; transition: width 1.2s cubic-bezier(.22,1,.36,1); }
+  .score-diagnosis { font-size: 12px; color: var(--color-text-muted); margin-top: 4px; }
+
+  /* Insight blocks */
+  .insight-block { background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 16px 18px; margin-bottom: 10px; }
+  .insight-block.purple { border-left: 3px solid var(--color-purple); }
+  .insight-block.green { border-left: 3px solid #22c55e; }
+  .insight-block.amber { border-left: 3px solid #f59e0b; }
+  .insight-block.red { border-left: 3px solid #ef4444; }
+  .insight-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--color-purple-light); margin-bottom: 8px; }
+  .insight-block.green .insight-title { color: #4ade80; }
+  .insight-block.amber .insight-title { color: #fbbf24; }
+  .insight-block.red .insight-title { color: #f87171; }
+  .insight-text { font-size: 14px; line-height: 1.7; color: var(--color-text); }
+  .insight-text strong { color: #fff; }
+
+  /* Stage roadmap */
+  .roadmap-stages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .stage-card { background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; position: relative; }
+  .stage-num { font-size: 11px; font-weight: 700; color: var(--color-purple-light); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 4px; }
+  .stage-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+  .stage-period { font-size: 11px; color: var(--color-text-muted); margin-bottom: 10px; }
+  .stage-items { display: flex; flex-direction: column; gap: 4px; }
+  .stage-item { font-size: 12px; color: var(--color-text-muted); padding: 3px 0 3px 14px; position: relative; }
+  .stage-item::before { content:'→'; position:absolute; left:0; color:var(--color-purple-light); font-size:10px; }
+
+  /* Channel pills */
+  .channel-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+  .channel-pill { background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: 20px; padding: 8px 16px; display: flex; align-items: center; gap: 8px; }
+  .channel-pill.primary { border-color: var(--color-purple); background: var(--color-purple-faint); }
+  .channel-pill.secondary { border-color: rgba(138,176,232,0.3); }
+  .channel-pill.avoid { border-color: rgba(239,68,68,0.3); opacity: 0.6; }
+  .channel-name { font-size: 13px; font-weight: 500; color: #fff; }
+  .channel-cpl { font-size: 11px; color: var(--color-text-muted); }
+
+  /* Forecast table */
+  .forecast-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .forecast-table th { background: var(--color-purple-faint); color: var(--color-purple-light); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; padding: 10px 14px; text-align: left; border-bottom: 0.5px solid var(--color-border); }
+  .forecast-table td { padding: 10px 14px; border-bottom: 0.5px solid rgba(255,255,255,0.04); color: var(--color-text); }
+  .forecast-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .forecast-table .highlight td { background: rgba(124,58,237,0.08); color: #fff; font-weight: 500; }
+
+  /* Canvas chart wrapper */
+  .chart-wrap { background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 20px; }
+
+  @keyframes slideInRight { from { transform: translateX(100%); opacity:0; } to { transform: translateX(0); opacity:1; } }
+
+  /* Capacity calculator */
+  .capacity-calc { background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(124,58,237,0.08)); border: 0.5px solid rgba(245,158,11,0.3); border-radius: var(--radius-md); padding: 20px; margin-top: 8px; }
+  .capacity-calc-title { font-size: 13px; font-weight: 700; color: #fbbf24; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; display:flex; align-items:center; gap:6px; }
+  .capacity-metrics { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 14px; }
+  .capacity-metric { background: rgba(0,0,0,0.2); border-radius: var(--radius-sm); padding: 10px 12px; text-align:center; }
+  .capacity-metric-val { font-size: 22px; font-weight: 700; color: #fff; }
+  .capacity-metric-label { font-size: 11px; color: var(--color-text-muted); margin-top:2px; }
+  .capacity-verdict { font-size: 13px; line-height: 1.6; color: var(--color-text); background: rgba(0,0,0,0.15); border-radius: var(--radius-sm); padding: 12px 14px; }
+  .capacity-verdict strong { color: #fbbf24; }
+
   @keyframes spin { to { transform: rotate(360deg); } }
   .spin { animation: spin 0.8s linear infinite; display: inline-block; }
 
@@ -443,7 +571,8 @@ const state = {
   selectedOutput: 0,
   generatedOutputs: {},
   viewMode: 'single',
-  expandedBlocks: {}
+  expandedBlocks: {},
+  shareUrl: ''
 };
 
 
@@ -457,7 +586,8 @@ const outputDefs = [
   { title: 'Front-End Offer Concept', short: 'Entry offer', icon: 'ti-gift', desc: 'Low-risk paid entry offer your buyers can say yes to' },
   { title: '12-Month Pipeline Forecast', short: 'ROI forecast', icon: 'ti-trending-up', desc: 'Meetings → deals → revenue model with CPM benchmarks' },
   { title: '6-Stage Roadmap', short: 'Roadmap', icon: 'ti-map-2', desc: 'Sequence to install owned channel alongside referrals' },
-  { title: 'Channel Mix Recommendation', short: 'Channels', icon: 'ti-broadcast', desc: 'Where to surround your specific buyers and why' }
+  { title: 'Channel Mix Recommendation', short: 'Channels', icon: 'ti-broadcast', desc: 'Where to surround your specific buyers and why' },
+  { title: 'The Hiring Trap', short: 'Hiring trap', icon: 'ti-alert-triangle', desc: 'Why waiting to hire before getting demand is the riskier move' }
 ];
 
 
@@ -606,6 +736,42 @@ const steps = [
         <label>What's the cold/warm split of your current network? <span class="hint">— how many ideal buyers could you reach today outside of existing relationships?</span></label>
         <textarea id="f-coldWarmSplit" placeholder="e.g. Maybe 20 warm contacts who'd take a meeting. Beyond that, almost zero reach into cold ICP. Our LinkedIn presence is personal, not strategic." style="min-height:64px;">${esc(state.data.coldWarmSplit)}</textarea>
       </div>
+
+      <div style="margin:20px 0 16px;border-top:0.5px solid var(--color-border);padding-top:20px;">
+        <div style="font-size:12px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:#f59e0b;margin-bottom:4px;"><i class="ti ti-alert-triangle" style="font-size:13px;"></i> The readiness trap</div>
+        <div style="font-size:14px;color:var(--color-text-muted);margin-bottom:16px;">These questions are about the belief that you need to be "more ready" before investing in demand generation.</div>
+      </div>
+
+      <div class="field">
+        <label>Are you waiting to invest in growth until you feel more ready? <span class="hint">— what does "ready" look like to you?</span></label>
+        <textarea id="f-readinessBlock" placeholder="e.g. We want to hire 2 more salespeople first. We need to fix our onboarding before we get more customers. We're waiting until Q3 when we have more budget..." style="min-height:72px;">${esc(state.data.readinessBlock)}</textarea>
+      </div>
+
+      <div class="grid3">
+        <div class="field">
+          <label>Current salespeople / closers <span class="hint">(FTEs who close deals)</span></label>
+          <input type="number" id="f-currentClosers" value="${esc(state.data.currentClosers)}" placeholder="e.g. 2" min="0" oninput="recalcCapacity()" />
+        </div>
+        <div class="field">
+          <label>Deals you could handle per month <span class="hint">(if leads showed up tomorrow)</span></label>
+          <input type="number" id="f-monthlyDealCapacity" value="${esc(state.data.monthlyDealCapacity)}" placeholder="e.g. 4" min="0" oninput="recalcCapacity()" />
+        </div>
+        <div class="field">
+          <label>When do you plan to hire sales? <span class="hint"></span></label>
+          <select id="f-hiringPlan">
+            ${[['now','Actively hiring now'],['3months','In the next 3 months'],['6months','In 6 months'],['revenue','Once we hit a revenue target'],['leads','Once we have more leads'],['nodecision','No plan yet']].map(([v,l])=>`<option value="${v}"${state.data.hiringPlan===v?' selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Have you lost deals due to lack of pipeline or inability to handle demand? <span class="hint">— be honest</span></label>
+        <textarea id="f-lostDealReason" placeholder="e.g. No — we've never had too many leads to handle. Actually our problem is the opposite, not enough coming in. / Yes, we once had 3 deals in flight and dropped the ball on follow-up." style="min-height:64px;">${esc(state.data.lostDealReason)}</textarea>
+      </div>
+
+      <div class="capacity-calc" id="capacity-calc-wrap">
+        ${renderCapacityCalc()}
+      </div>
     `
   },
   {
@@ -737,7 +903,7 @@ function saveStep() {
   else if (state.step === 1) ['acv','closeRate','salesCycle'].forEach(k => { state.data[k] = g('f-'+k); });
   else if (state.step === 2) ['grossMargin','ltv','cacBudget'].forEach(k => { state.data[k] = g('f-'+k); });
   else if (state.step === 3) ['whatWinLooksLike','exitGoal','timeHorizon','investorStage','boardPressure','personalIncome','biggestFear','founderVision'].forEach(k => { state.data[k] = g('f-'+k); });
-  else if (state.step === 4) ['referralRiskAnswer','growthCeiling','salesCallQuality','yearsOnReferrals','demandGenHeadcount','lastTimeNewChannel','whyPaidFailed','coldWarmSplit'].forEach(k => { state.data[k] = g('f-'+k); });
+  else if (state.step === 4) ['referralRiskAnswer','growthCeiling','salesCallQuality','yearsOnReferrals','demandGenHeadcount','lastTimeNewChannel','whyPaidFailed','coldWarmSplit','readinessBlock','currentClosers','monthlyDealCapacity','hiringPlan','lostDealReason'].forEach(k => { state.data[k] = g('f-'+k); });
   else if (state.step === 5) ['icp','painPoints','competitors','differentiator','reviewQuotes'].forEach(k => { state.data[k] = g('f-'+k); });
   else if (state.step === 6) ['currentOffer','desiredOffer','channels','missedOpps'].forEach(k => { state.data[k] = g('f-'+k); });
 }
@@ -835,6 +1001,59 @@ function recalcCAC() {
 }
 
 
+function renderCapacityCalc() {
+  const acv = parseFloat(state.data.acv) || 0;
+  const cr = parseFloat(state.data.closeRate) || 0;
+  const capacity = parseInt(state.data.monthlyDealCapacity) || 0;
+  const closers = parseInt(state.data.currentClosers) || 0;
+
+  if (!acv || !cr || !capacity) {
+    return '<div class="capacity-calc"><div class="capacity-calc-title"><i class="ti ti-calculator"></i> Capacity reality check</div><div style="font-size:13px;color:var(--color-text-muted);">Enter your ACV, close rate (step 2) and monthly deal capacity above to see your capacity analysis.</div></div>';
+  }
+
+  // Meetings needed to fill capacity
+  const meetingsToFillCapacity = Math.ceil(capacity / (cr / 100));
+  // Revenue at capacity
+  const revenueAtCapacity = capacity * acv;
+  // Monthly revenue per closer
+  const revenuePerCloser = closers > 0 ? Math.round(revenueAtCapacity / closers) : revenueAtCapacity;
+  // Amplixity CPM benchmark
+  const cpm = 400;
+  const monthlySpendToFillCapacity = meetingsToFillCapacity * cpm;
+  // Headroom - % of capacity currently being used (assume 20% from referrals)
+  const currentMeetings = Math.round(capacity * 0.2);
+  const headroomPct = Math.round(((capacity - currentMeetings) / capacity) * 100);
+
+  const verdict = headroomPct >= 60
+    ? `You have <strong>${headroomPct}% unused capacity</strong> right now. You could handle <strong>${capacity - currentMeetings} more deals per month</strong> without hiring anyone. At $${acv.toLocaleString()} ACV, that's <strong>$${((capacity - currentMeetings) * acv).toLocaleString()} in reachable monthly revenue</strong> sitting idle. Hiring before filling that gap means paying salaries to wait for leads that aren't coming.`
+    : `You're closer to capacity than you think. To fully fill your pipeline you need roughly <strong>${meetingsToFillCapacity} meetings/month</strong> — at the $300–$500 Amplixity benchmark, that's <strong>$${monthlySpendToFillCapacity.toLocaleString()}/month in paid media</strong>. Get demand flowing first, then hire with the revenue it generates.`;
+
+  return `<div class="capacity-calc">
+    <div class="capacity-calc-title"><i class="ti ti-calculator"></i> Your capacity reality check</div>
+    <div class="capacity-metrics">
+      <div class="capacity-metric">
+        <div class="capacity-metric-val">${capacity}</div>
+        <div class="capacity-metric-label">Deals you can close/month</div>
+      </div>
+      <div class="capacity-metric">
+        <div class="capacity-metric-val">${headroomPct}%</div>
+        <div class="capacity-metric-label">Estimated unused capacity</div>
+      </div>
+      <div class="capacity-metric">
+        <div class="capacity-metric-val">$${Math.round(revenueAtCapacity/1000)}K</div>
+        <div class="capacity-metric-label">Revenue at full capacity/mo</div>
+      </div>
+    </div>
+    <div class="capacity-verdict">${verdict}</div>
+  </div>`;
+}
+
+function recalcCapacity() {
+  const el = document.getElementById('capacity-calc-wrap');
+  if (el) el.innerHTML = renderCapacityCalc();
+}
+
+
 function renderStep() {
   const s = steps[state.step];
   document.getElementById('steps-container').innerHTML = `
@@ -866,7 +1085,7 @@ function nextStep() {
   saveStep();
   if (state.step < steps.length-1) { state.step++; renderStep(); }
   else {
-    document.getElementById('main-container').style.maxWidth = '1100px';
+    document.getElementById('main-container').style.maxWidth = '100%'; document.getElementById('main-container').style.padding = '0 20px';
     showOutputPanel();
   }
 }
@@ -897,6 +1116,8 @@ function renderOutputPanel() {
         </div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
           ${allDone ? '<button class="out-action-btn" onclick="exportAll()"><i class="ti ti-download"></i> Export all</button>' : ''}
+          <button class="out-action-btn" id="save-btn" onclick="saveCurrentClient()"><i class="ti ti-device-floppy"></i> Save</button>
+          <button class="out-action-btn" onclick="toggleSessionsDrawer()"><i class="ti ti-users"></i> Saved clients</button>
           <button class="out-generate-btn" id="gen-all-btn" onclick="generateAll()">
             <i class="ti ti-sparkles"></i>
             ${doneCount === 0 ? 'Generate all 10 outputs' : allDone ? 'Regenerate all' : 'Continue ('+(doneCount)+'/10 done)'}
@@ -920,13 +1141,452 @@ function renderOutputPanel() {
   `;
 }
 
+
+function renderMarkdown(text) {
+  if (!text) return '';
+  let html = text
+    // Escape HTML first
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    // Tables
+    .replace(/^\|(.+)\|$/gm, (line) => {
+      const cells = line.split('|').filter((_,i,a) => i>0 && i<a.length-1);
+      return '<tr>' + cells.map(c => c.trim().match(/^[-:]+$/) ? '' : '<td>'+c.trim()+'</td>').join('') + '</tr>';
+    })
+    // Wrap consecutive <tr> blocks in table
+    .replace(/((<tr>.*<\/tr>\n?)+)/g, '<table>$1</table>')
+    // Remove empty rows (separator rows)
+    .replace(/<tr><\/tr>/g,'')
+    // Headers
+    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
+    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
+    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    // Italic
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    // Horizontal rule
+    .replace(/^---$/gm,'<hr>')
+    // Numbered lists
+    .replace(/^(\d+)\. (.+)$/gm,'<li class="num">$2</li>')
+    // Bullet lists
+    .replace(/^[•\-\*] (.+)$/gm,'<li>$1</li>')
+    // Wrap list items
+    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => '<ul>'+m+'</ul>')
+    // Paragraphs - double newline
+    .replace(/\n\n/g,'</p><p>')
+    // Single newlines
+    .replace(/\n/g,'<br>')
+    // Wrap in paragraph
+    ;
+  return '<div class="md-body"><p>' + html + '</p></div>';
+}
+
+
+function scoreColor(score) {
+  if (score >= 4) return '#22c55e';
+  if (score >= 3) return '#f59e0b';
+  return '#ef4444';
+}
+function scoreLabel(score) {
+  if (score >= 4) return 'green';
+  if (score >= 3) return 'amber';
+  return 'red';
+}
+function riskColor(pct) {
+  if (pct >= 60) return '#ef4444';
+  if (pct >= 40) return '#f59e0b';
+  return '#22c55e';
+}
+function barColor(i) {
+  const cols = ['#7c3aed','#8ab0e8','#b06ef3','#22c55e','#f59e0b','#ef4444','#a78bfa'];
+  return cols[i % cols.length];
+}
+
+function renderVisualOutput(idx, text) {
+  const d = state.data;
+  switch(idx) {
+    case 0: return renderPipelineViz(d, text);
+    case 5: return renderScorecardViz(d, text);
+    case 7: return renderForecastViz(d, text);
+    case 8: return renderRoadmapViz(d, text);
+    case 9: return renderChannelViz(d, text);
+    case 10: return renderHiringTrapViz(d, text);
+    default: return renderTextViz(text);
+  }
+}
+
+function renderPipelineViz(d, text) {
+  const sources = Object.entries(d.sources).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a);
+  const topSource = sources[0];
+  const topPct = topSource ? topSource[1] : 0;
+  const risk = topPct >= 60 ? 'HIGH' : topPct >= 40 ? 'MEDIUM' : 'LOW';
+  const riskClass = topPct >= 60 ? 'red' : topPct >= 40 ? 'amber' : 'low';
+
+  const barsHtml = sources.map(([k,v],i) => `
+    <div class="pipeline-bar-row">
+      <div class="pipeline-bar-label">${k.charAt(0).toUpperCase()+k.slice(1)}</div>
+      <div class="pipeline-bar-track">
+        <div class="pipeline-bar-fill" id="pbar-${i}" style="width:0%;background:${riskColor(v)};">
+          ${v >= 15 ? k.charAt(0).toUpperCase()+k.slice(1) : ''}
+        </div>
+      </div>
+      <div class="pipeline-bar-pct">${v}%</div>
+    </div>
+  `).join('');
+
+  setTimeout(() => {
+    sources.forEach(([,v],i) => {
+      const el = document.getElementById('pbar-'+i);
+      if (el) el.style.width = v+'%';
+    });
+  }, 100);
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-chart-pie"></i> Pipeline source breakdown</div>
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card ${riskClass}">
+          <div class="stat-val">${topPct}%</div>
+          <div class="stat-label">${topSource ? topSource[0] : 'Top'} dependency</div>
+          <div class="stat-badge ${riskClass}">${risk} RISK</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${sources.length}</div>
+          <div class="stat-label">Active pipeline sources</div>
+        </div>
+        <div class="stat-card ${sources.length <= 2 ? 'red' : sources.length <= 3 ? 'amber' : 'green'}">
+          <div class="stat-val">${sources.length <= 2 ? 'Fragile' : sources.length <= 3 ? 'Moderate' : 'Diverse'}</div>
+          <div class="stat-label">Source diversity rating</div>
+        </div>
+      </div>
+      <div class="pipeline-bars">${barsHtml}</div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-alert-triangle"></i> Analysis</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderScorecardViz(d, text) {
+  const scores = [
+    { label: 'Product', key: 'productScore', desc: 'Defined, documented, deliverable at scale' },
+    { label: 'Audience', key: 'audienceScore', desc: 'Know who, where, and what triggers them' },
+    { label: 'Offer', key: 'offerScore', desc: 'Compelling, low-risk entry for buyers' },
+    { label: 'Funnel', key: 'funnelScore', desc: 'Landing pages, nurture, tracking in place' }
+  ];
+  const avg = (scores.reduce((a,s) => a + (d[s.key]||3), 0) / scores.length).toFixed(1);
+  const verdict = avg >= 4 ? 'Ready to Scale' : avg >= 3 ? 'Needs Work' : 'Not Ready';
+  const verdictClass = avg >= 4 ? 'green' : avg >= 3 ? 'amber' : 'red';
+
+  const scoreHtml = scores.map(s => {
+    const val = d[s.key] || 3;
+    const pct = (val/5)*100;
+    const col = scoreColor(val);
+    return `<div class="score-item">
+      <div class="score-item-header">
+        <div class="score-item-label">${s.label}</div>
+        <div class="score-item-val" style="color:${col};">${val}/5</div>
+      </div>
+      <div class="score-track"><div class="score-fill" id="sfill-${s.key}" style="width:0%;background:${col};"></div></div>
+      <div class="score-diagnosis">${s.desc}</div>
+    </div>`;
+  }).join('');
+
+  setTimeout(() => {
+    scores.forEach(s => {
+      const el = document.getElementById('sfill-'+s.key);
+      if (el) el.style.width = ((d[s.key]||3)/5*100)+'%';
+    });
+  }, 100);
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-clipboard-check"></i> Scale readiness</div>
+      <div class="stat-grid" style="margin-bottom:24px;">
+        <div class="stat-card ${verdictClass}">
+          <div class="stat-val">${avg}</div>
+          <div class="stat-label">Overall score</div>
+          <div class="stat-badge ${verdictClass}">${verdict}</div>
+        </div>
+        ${scores.map(s => `<div class="stat-card ${scoreLabel(d[s.key]||3)}">
+          <div class="stat-val">${d[s.key]||3}/5</div>
+          <div class="stat-label">${s.label}</div>
+        </div>`).join('')}
+      </div>
+      <div class="score-display">${scoreHtml}</div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-bulb"></i> Recommendations</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderForecastViz(d, text) {
+  const acv = parseFloat(d.acv)||75000;
+  const cr = parseFloat(d.closeRate)||25;
+  const months = [1,2,3,4,5,6,7,8,9,10,11,12];
+  // Ramp: starts slow, accelerates
+  const meetingsPerMonth = [2,3,4,5,6,7,8,9,10,11,12,13];
+  const cpm = 400;
+  const dealsPerMonth = meetingsPerMonth.map(m => (m * (cr/100)).toFixed(1));
+  const revenuePerMonth = dealsPerMonth.map(d => Math.round(parseFloat(d) * acv));
+  const cumRevenue = revenuePerMonth.reduce((acc,v,i) => { acc.push((acc[i-1]||0)+v); return acc; }, []);
+
+  setTimeout(() => {
+    const ctx = document.getElementById('forecast-chart');
+    if (!ctx || !window.Chart) return;
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],
+        datasets: [
+          { label: 'Monthly Revenue', data: revenuePerMonth, backgroundColor: 'rgba(124,58,237,0.7)', borderRadius: 4 },
+          { label: 'Cumulative Revenue', data: cumRevenue, type: 'line', borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#4ade80', yAxisID: 'y1' }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } } },
+        scales: {
+          x: { ticks: { color: '#8a8aaa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8a8aaa', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y1: { position: 'right', ticks: { color: '#4ade80', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { display: false } }
+        }
+      }
+    });
+  }, 200);
+
+  const totalRev = cumRevenue[11];
+  const totalMeetings = meetingsPerMonth.reduce((a,b)=>a+b,0);
+  const totalSpend = totalMeetings * cpm;
+  const roi = ((totalRev - totalSpend) / totalSpend * 100).toFixed(0);
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-trending-up"></i> 12-month revenue forecast</div>
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card green">
+          <div class="stat-val">$${Math.round(totalRev/1000)}K</div>
+          <div class="stat-label">Projected 12-month revenue</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${totalMeetings}</div>
+          <div class="stat-label">Meetings needed</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">$${Math.round(totalSpend/1000)}K</div>
+          <div class="stat-label">Estimated ad spend</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-val">${roi}%</div>
+          <div class="stat-label">Projected ROI</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:260px;">
+        <canvas id="forecast-chart"></canvas>
+      </div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-calculator"></i> Full model & assumptions</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderRoadmapViz(d, text) {
+  const stages = [
+    { num:'01', title:'Foundation', period:'Days 1–30', color:'#7c3aed', items:['ICP definition locked','Tracking & pixels installed','Landing page live','Ad creative briefed'] },
+    { num:'02', title:'Launch', period:'Days 31–60', color:'#8ab0e8', items:['First campaigns live','LinkedIn + Meta running','Retargeting activated','First meetings booked'] },
+    { num:'03', title:'Optimise', period:'Days 61–90', color:'#b06ef3', items:['CPL benchmarked','Winning ads scaled','Losing ads killed','Message refined'] },
+    { num:'04', title:'Scale', period:'Months 4–6', color:'#22c55e', items:['Budget increased 2x','New audience segments','SDR sequence added','Pipeline predictable'] },
+    { num:'05', title:'Expand', period:'Months 7–9', color:'#f59e0b', items:['New channels tested','Content engine live','Referrals become bonus','CAC stable'] },
+    { num:'06', title:'Own the Channel', period:'Months 10–12', color:'#4ade80', items:['Owned demand channel','Brand in market','Referrals = upside only','Ready to scale budget'] }
+  ];
+
+  const stagesHtml = stages.map(s => `
+    <div class="stage-card" style="border-top:2px solid ${s.color};">
+      <div class="stage-num" style="color:${s.color};">Stage ${s.num}</div>
+      <div class="stage-title">${s.title}</div>
+      <div class="stage-period">${s.period}</div>
+      <div class="stage-items">${s.items.map(i=>`<div class="stage-item">${i}</div>`).join('')}</div>
+    </div>
+  `).join('');
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-map-2"></i> Your momentum map</div>
+      <div class="roadmap-stages">${stagesHtml}</div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-flag"></i> Full roadmap detail</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderChannelViz(d, text) {
+  const channels = [
+    { name:'LinkedIn Ads', type:'primary', icon:'ti-brand-linkedin', cpl:'$80–$200', why:'Best for B2B decision-makers' },
+    { name:'Google Search', type:'secondary', icon:'ti-brand-google', cpl:'$40–$120', why:'Capture active demand' },
+    { name:'Meta Ads', type:'secondary', icon:'ti-brand-meta', cpl:'$20–$80', why:'Retargeting & awareness' },
+    { name:'YouTube', type:'secondary', icon:'ti-brand-youtube', cpl:'$15–$60', why:'Brand building at scale' },
+    { name:'Cold Email', type:'avoid', icon:'ti-mail', cpl:'Risky', why:'Burns list, low intent' },
+    { name:'Trade Shows', type:'avoid', icon:'ti-building-community', cpl:'Very high', why:'Unpredictable, hard to scale' }
+  ];
+
+  const channelHtml = channels.map(c => `
+    <div class="channel-pill ${c.type}">
+      <i class="ti ${c.icon}" style="font-size:16px;color:${c.type==='primary'?'var(--color-purple-light)':c.type==='avoid'?'#f87171':'#8ab0e8'};"></i>
+      <div>
+        <div class="channel-name">${c.name}</div>
+        <div class="channel-cpl">${c.type==='avoid'?'⚠ Avoid for now':c.cpl+' CPL'}</div>
+      </div>
+    </div>
+  `).join('');
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-broadcast"></i> Recommended channel mix</div>
+      <div class="channel-grid" style="margin-bottom:20px;">${channelHtml}</div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-list-details"></i> Full channel strategy</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderHiringTrapViz(d, text) {
+  const acv = parseFloat(d.acv) || 75000;
+  const cr = parseFloat(d.closeRate) || 25;
+  const capacity = parseInt(d.monthlyDealCapacity) || 4;
+  const cpm = 400;
+  const mediaBudget = 5000;
+  const meetingsPerMonth = Math.round(mediaBudget / cpm);
+  const dealsPerMonth = (meetingsPerMonth * (cr/100));
+  const revenuePerMonth = dealsPerMonth * acv;
+  const salesSalary = 100000 / 12; // $100K/yr salesperson
+
+  // Path A: Hire first (months 1-6)
+  const pathA = [
+    { month: 'M1', cash: -salesSalary, label: 'Hiring costs' },
+    { month: 'M2', cash: -salesSalary, label: 'Salary, no pipeline' },
+    { month: 'M3', cash: -salesSalary * 0.7, label: 'First meetings' },
+    { month: 'M4', cash: -salesSalary * 0.3, label: 'Pipeline building' },
+    { month: 'M5', cash: revenuePerMonth * 0.5 - salesSalary, label: 'First deals' },
+    { month: 'M6', cash: revenuePerMonth - salesSalary, label: 'Break even' }
+  ];
+
+  // Path B: Demand first (months 1-6)
+  const pathB = [
+    { month: 'M1', cash: -mediaBudget, label: 'Ads live' },
+    { month: 'M2', cash: revenuePerMonth * 0.3 - mediaBudget, label: 'First meetings' },
+    { month: 'M3', cash: revenuePerMonth * 0.7 - mediaBudget, label: 'First deals' },
+    { month: 'M4', cash: revenuePerMonth - mediaBudget, label: 'Profitable' },
+    { month: 'M5', cash: revenuePerMonth * 1.3 - mediaBudget, label: 'Scaling' },
+    { month: 'M6', cash: revenuePerMonth * 1.5 - mediaBudget, label: 'Hire with revenue' }
+  ];
+
+  const cumA = pathA.reduce((acc, v, i) => { acc.push((acc[i-1]||0) + v.cash); return acc; }, []);
+  const cumB = pathB.reduce((acc, v, i) => { acc.push((acc[i-1]||0) + v.cash); return acc; }, []);
+
+  const totalCostA = Math.abs(Math.min(...cumA));
+  const totalGainB = cumB[5];
+  const unusedCapacity = Math.round(((capacity - Math.ceil(dealsPerMonth)) / capacity) * 100);
+
+  setTimeout(() => {
+    const ctx = document.getElementById('hiring-trap-chart');
+    if (!ctx || !window.Chart) return;
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['M1','M2','M3','M4','M5','M6'],
+        datasets: [
+          {
+            label: 'Path A: Hire first',
+            data: cumA,
+            borderColor: '#ef4444',
+            backgroundColor: 'rgba(239,68,68,0.1)',
+            tension: 0.4, fill: true,
+            pointBackgroundColor: '#ef4444', pointRadius: 5
+          },
+          {
+            label: 'Path B: Demand first',
+            data: cumB,
+            borderColor: '#4ade80',
+            backgroundColor: 'rgba(74,222,128,0.1)',
+            tension: 0.4, fill: true,
+            pointBackgroundColor: '#4ade80', pointRadius: 5
+          }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: '#f0f0f5', font: { size: 12 } } },
+          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': $' + Math.round(ctx.raw).toLocaleString() } }
+        },
+        scales: {
+          x: { ticks: { color: '#8a8aaa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8a8aaa', callback: v => '$' + Math.round(v/1000) + 'K' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }, 200);
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header" style="color:#fbbf24;"><i class="ti ti-alert-triangle"></i> The hiring trap — two paths, same goal</div>
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card red">
+          <div class="stat-val">$${Math.round(totalCostA/1000)}K</div>
+          <div class="stat-label">Cash risk: hire first path</div>
+          <div class="stat-badge high">HIGH RISK</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-val">$${Math.round(totalGainB/1000)}K</div>
+          <div class="stat-label">Net gain: demand first path</div>
+          <div class="stat-badge good">LOWER RISK</div>
+        </div>
+        <div class="stat-card amber">
+          <div class="stat-val">${unusedCapacity}%</div>
+          <div class="stat-label">Your unused deal capacity right now</div>
+          <div class="stat-badge medium">IDLE</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">$${Math.round(mediaBudget/1000)}K</div>
+          <div class="stat-label">Monthly media spend vs $${Math.round(salesSalary/1000)}K salary</div>
+        </div>
+      </div>
+      <div class="insight-block amber" style="margin-bottom:16px;">
+        <div class="insight-title">The reframe</div>
+        <div class="insight-text">Demand funds hiring. Hiring doesn't create demand. A salesperson without a pipeline is a <strong>liability</strong>, not an asset. The question isn't "are we ready for leads?" — it's "can we afford to keep waiting?"</div>
+      </div>
+      <div class="chart-wrap" style="height:280px;">
+        <canvas id="hiring-trap-chart"></canvas>
+      </div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-brain"></i> Full analysis</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+
+function renderTextViz(text) {
+  return `<div class="viz-wrap"><div class="viz-section">${renderMarkdown(text)}</div></div>`;
+}
+
 function renderTabContent(idx) {
   const def = outputDefs[idx];
   const text = state.generatedOutputs[idx];
   if (!text) {
     return '<div class="out-empty"><i class="ti '+def.icon+'" style="font-size:48px;color:var(--color-purple-light);opacity:0.4;display:block;margin-bottom:16px;"></i><div class="out-empty-title">'+def.title+'</div><div class="out-empty-desc">'+def.desc+'</div><button class="out-generate-single" onclick="generateSingle('+idx+')"><i class="ti ti-sparkles"></i> Generate this output</button></div>';
   }
-  return '<div class="out-result-wrap"><div class="out-result-actions"><div class="out-result-badge"><i class="ti '+def.icon+'" style="font-size:12px;"></i> '+def.title+'</div><div style="display:flex;gap:6px;"><button class="out-action-btn" onclick="copyTab('+idx+')"><i class="ti ti-copy"></i> Copy</button><button class="out-action-btn" onclick="downloadTab('+idx+')"><i class="ti ti-download"></i> Download</button><button class="out-action-btn" onclick="viewTab('+idx+')"><i class="ti ti-external-link"></i> Full page</button></div></div><div class="out-result-text">'+esc(text)+'</div></div>';
+  return '<div class="out-result-wrap"><div class="out-result-actions"><div class="out-result-badge"><i class="ti '+def.icon+'" style="font-size:12px;"></i> '+def.title+'</div><div style="display:flex;gap:6px;"><button class="out-action-btn" onclick="copyTab('+idx+')"><i class="ti ti-copy"></i> Copy</button><button class="out-action-btn" onclick="downloadTab('+idx+')"><i class="ti ti-download"></i> Download</button><button class="out-action-btn" onclick="viewTab('+idx+')"><i class="ti ti-external-link"></i> Full page</button></div></div><div class="out-result-text">'+renderVisualOutput(idx,text)+'</div></div>';
 }
 
 function switchTab(idx) {
@@ -940,8 +1600,13 @@ function switchTab(idx) {
 function goBack() {
   document.getElementById('output-panel').style.display = 'none';
   document.getElementById('steps-container').style.display = 'block';
-  document.getElementById('main-container').style.maxWidth = '760px';
+  document.getElementById('main-container').style.maxWidth = '960px'; document.getElementById('main-container').style.padding = '0 24px';
   renderStep();
+}
+
+function goToSessions() {
+  saveCurrentClient();
+  showClientPicker();
 }
 
 function copyTab(idx) {
@@ -988,11 +1653,12 @@ function buildContext() {
   const cacCtx = d.acv ? '- Gross margin: '+gm+'% | LTV: $'+Math.round(effectiveLTV)+' | Max CAC: $'+Math.round(maxCAC)+' | Max CPM: $'+Math.round(maxCPM) : '';
   const founderCtx = '- Goal: '+d.exitGoal+' | Horizon: '+d.timeHorizon+'yrs | '+d.investorStage+'\n- What winning looks like: '+(d.whatWinLooksLike||'Not specified')+'\n- Biggest fear: '+(d.biggestFear||'Not specified')+'\n- Vision: '+(d.founderVision||'Not specified');
   const growthCtx = '- Years on referrals: '+(d.yearsOnReferrals||'N/A')+' | Demand gen: '+d.demandGenHeadcount+'\n- Growth ceiling: '+(d.growthCeiling||'Not specified')+'\n- Referral risk: '+(d.referralRiskAnswer||'Not specified')+'\n- Paid media history: '+(d.whyPaidFailed||'Not specified');
-  return {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx};
+  const hiringCtx = '- Current closers: '+(d.currentClosers||'N/A')+' | Monthly deal capacity: '+(d.monthlyDealCapacity||'N/A')+' | Hiring plan: '+(d.hiringPlan||'N/A')+'\n- Readiness block: '+(d.readinessBlock||'N/A')+'\n- Lost deal reason: '+(d.lostDealReason||'N/A');
+  return {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx, hiringCtx};
 }
 
 function buildPrompts(ctx) {
-  const {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx} = ctx;
+  const {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx, hiringCtx} = ctx;
   return [
     // 0 Pipeline Dependency Map
     `Generate a Pipeline Dependency Map for ${d.companyName||'the prospect'} (${d.industry}).\nPipeline: ${srcBreakdown} | ACV: $${d.acv} | Close rate: ${d.closeRate}% | Cycle: ${d.salesCycle}wks\nRevenue: ${d.currentRevenue} → target ${d.targetRevenue}\n${growthCtx}\n${founderCtx}\n\n1. PIPELINE DEPENDENCY SCORE — HIGH/MEDIUM/LOW with logic\n2. SOURCE BREAKDOWN — each source, %, risk label\n3. CONCENTRATION RISK — honest 2-paragraph narrative tied to their fears\n4. THE REFERRAL TRAP — use their own words from referral risk answer\n5. THE PERSONAL STAKES — connect to founder vision and what winning means\n6. RECOMMENDED REBALANCE — target mix at 12 months`,
@@ -1037,28 +1703,33 @@ async function generateAll() {
   const progressBar = document.getElementById('out-progress-bar');
   const progressLabel = document.getElementById('out-progress-label');
   if (progressWrap) progressWrap.style.display = 'block';
+  if (progressLabel) progressLabel.innerHTML = '<span class="generating-dots">Generating all 10 outputs simultaneously</span>';
+  if (progressBar) progressBar.style.width = '5%';
 
   const ctx = buildContext();
   const prompts = buildPrompts(ctx);
 
-  for (let idx = 0; idx < outputDefs.length; idx++) {
-    if (state.generatedOutputs[idx]) continue;
-    const pct = Math.round((idx/outputDefs.length)*100);
-    if (progressBar) progressBar.style.width = pct+'%';
-    if (progressLabel) progressLabel.innerHTML = 'Building <strong>'+outputDefs[idx].title+'</strong> — '+idx+' of '+outputDefs.length+' complete...';
+  // Run all simultaneously
+  let completed = 0;
+  const tasks = outputDefs.map((_, idx) => {
+    if (state.generatedOutputs[idx]) { completed++; return Promise.resolve(); }
+    return callAPI(idx, prompts[idx]).then(() => {
+      completed++;
+      const pct = Math.round((completed / outputDefs.length) * 100);
+      if (progressBar) progressBar.style.width = pct + '%';
+      if (progressLabel) progressLabel.innerHTML = completed + ' of ' + outputDefs.length + ' outputs complete...';
+      // Mark tab done
+      const tabs = document.querySelectorAll('.out-tab');
+      if (tabs[idx]) tabs[idx].classList.add('done');
+      // Update content area if this tab is active
+      if (state.selectedOutput === idx) {
+        const area = document.getElementById('out-content-area');
+        if (area) area.innerHTML = renderTabContent(idx);
+      }
+    });
+  });
 
-    // Highlight active tab
-    const tabs = document.querySelectorAll('.out-tab');
-    tabs.forEach((t,i) => t.classList.toggle('active', i===idx));
-    state.selectedOutput = idx;
-
-    await callAPI(idx, prompts[idx]);
-
-    // Mark tab done + update content if active
-    if (tabs[idx]) tabs[idx].classList.add('done');
-    const area = document.getElementById('out-content-area');
-    if (area && state.selectedOutput === idx) area.innerHTML = renderTabContent(idx);
-  }
+  await Promise.all(tasks);
 
   if (progressBar) progressBar.style.width = '100%';
   if (progressLabel) progressLabel.innerHTML = '<span style="color:#4ade80;font-weight:500;">✓ All 10 outputs ready — click any tab to read</span>';
@@ -1098,7 +1769,158 @@ async function callAPI(idx, prompt) {
   }
 }
 
-// ─── PARTICLES ───────────────────────────────────────────────
+
+// ─── CLIENT SESSION SYSTEM (Database-backed) ─────────────────
+
+function generateSessionId() {
+  return Math.random().toString(36).substring(2,8).toUpperCase();
+}
+
+async function saveCurrentClient() {
+  if (!state.clientId) state.clientId = generateSessionId();
+  const btn = document.getElementById('save-btn');
+  if (btn) btn.innerHTML = '<i class="ti ti-loader spin"></i> Saving...';
+  try {
+    const resp = await fetch('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: state.clientId,
+        clientName: state.data.companyName || 'Unnamed',
+        data: state.data,
+        outputs: state.generatedOutputs
+      })
+    });
+    const result = await resp.json();
+    if (result.success) {
+      const shareUrl = window.location.origin + '/?session=' + state.clientId;
+      state.shareUrl = shareUrl;
+      if (btn) btn.innerHTML = '<i class="ti ti-check"></i> Saved';
+      setTimeout(() => { if (btn) btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save'; }, 2000);
+      // Update URL without reload
+      window.history.replaceState({}, '', '/?session=' + state.clientId);
+    }
+  } catch (err) {
+    console.error('Save error:', err);
+    if (btn) btn.innerHTML = '<i class="ti ti-device-floppy"></i> Save';
+  }
+}
+
+async function loadSession(id) {
+  try {
+    const resp = await fetch('/api/sessions/' + id);
+    if (!resp.ok) return null;
+    const session = await resp.json();
+    state.clientId = session.id;
+    state.data = session.data || state.data;
+    state.generatedOutputs = session.outputs || {};
+    state.selectedOutput = 0;
+    window.history.replaceState({}, '', '/?session=' + id);
+    return session;
+  } catch (err) {
+    console.error('Load error:', err);
+    return null;
+  }
+}
+
+async function loadClient(id) {
+  const session = await loadSession(id);
+  if (!session) return alert('Could not load session');
+  document.getElementById('main-container').style.maxWidth = '100%';
+  showOutputPanel();
+}
+
+async function deleteClient(id) {
+  if (!confirm('Delete this session?')) return;
+  await fetch('/api/sessions/' + id, { method: 'DELETE' });
+  toggleSessionsDrawer();
+  setTimeout(toggleSessionsDrawer, 50);
+}
+
+function startNewSession() {
+  state.clientId = 'client_' + Date.now();
+  state.step = 0;
+  state.generatedOutputs = {};
+  state.selectedOutput = 0;
+  state.data = {
+    companyName:'',website:'',industry:'B2B SaaS',founded:'',acv:'',closeRate:'',salesCycle:'',teamSize:'',currentRevenue:'',targetRevenue:'',
+    grossMargin:'70',ltv:'',cacBudget:'',
+    sources:{referral:0,partnerships:0,outbound:0,inbound:0,events:0,paid:0,other:0},
+    whatWinLooksLike:'',exitGoal:'scale',timeHorizon:'3',investorStage:'bootstrapped',boardPressure:'no',personalIncome:'',biggestFear:'',founderVision:'',
+    referralRiskAnswer:'',growthCeiling:'',salesCallQuality:'',yearsOnReferrals:'',demandGenHeadcount:'0',lastTimeNewChannel:'',whyPaidFailed:'',coldWarmSplit:'',
+    readinessBlock:'',currentClosers:'',monthlyDealCapacity:'',hiringPlan:'now',lostDealReason:'',
+    icp:'',painPoints:'',competitors:'',differentiator:'',productScore:3,audienceScore:3,offerScore:3,funnelScore:3,
+    currentOffer:'',desiredOffer:'',channels:'',missedOpps:'',reviewQuotes:''
+  };
+  document.getElementById('output-panel').style.display = 'none';
+  document.getElementById('steps-container').style.display = 'block';
+  document.getElementById('main-container').style.maxWidth = '960px';
+  document.getElementById('main-container').style.padding = '0 24px';
+  renderStep();
+}
+
+async function checkUrlSession() {
+  const params = new URLSearchParams(window.location.search);
+  const sessionId = params.get('session');
+  if (sessionId) {
+    const session = await loadSession(sessionId);
+    if (session) {
+      document.getElementById('main-container').style.maxWidth = '100%';
+      showOutputPanel();
+      return true;
+    }
+  }
+  return false;
+}
+
+
+async function toggleSessionsDrawer() {
+  let drawer = document.getElementById('sessions-drawer');
+  if (drawer) { drawer.remove(); return; }
+
+  drawer = document.createElement('div');
+  drawer.id = 'sessions-drawer';
+  drawer.style.cssText = 'position:fixed;top:0;right:0;width:360px;height:100vh;background:#13131f;border-left:0.5px solid rgba(255,255,255,0.08);z-index:1000;padding:24px;overflow-y:auto;animation:slideInRight 0.25s ease;';
+  drawer.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;"><div style="font-size:14px;font-weight:600;color:#fff;">Client sessions</div><button onclick="toggleSessionsDrawer()" style="background:transparent;border:none;color:#8a8aaa;font-size:18px;cursor:pointer;">✕</button></div><div style="font-size:13px;color:#8a8aaa;padding:20px 0;text-align:center;"><i class="ti ti-loader spin"></i> Loading sessions...</div>';
+  document.body.appendChild(drawer);
+
+  try {
+    const resp = await fetch('/api/sessions');
+    const sessions = await resp.json();
+    
+    const content = sessions.length === 0 
+      ? '<div style="font-size:13px;color:#8a8aaa;padding:20px 0;">No saved sessions yet. Complete a workshop and click Save.</div>'
+      : sessions.map(s => `
+          <div style="background:#1a1a2e;border:0.5px solid rgba(255,255,255,0.08);border-radius:10px;padding:14px;margin-bottom:10px;">
+            <div style="font-size:14px;font-weight:500;color:#fff;margin-bottom:2px;">${esc(s.clientName)||'Unnamed'}</div>
+            <div style="font-size:12px;color:#8a8aaa;margin-bottom:10px;">${s.outputCount} outputs · ${new Date(s.updatedAt).toLocaleDateString()}</div>
+            <div style="font-size:11px;color:#7c3aed;margin-bottom:10px;word-break:break-all;">${window.location.origin}/?session=${s.id}</div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="loadClient('${s.id}');toggleSessionsDrawer();" style="flex:1;background:#7c3aed;border:none;color:#fff;padding:7px;border-radius:7px;font-size:12px;font-weight:500;cursor:pointer;">Load</button>
+              <button onclick="navigator.clipboard.writeText('${window.location.origin}/?session=${s.id}').then(()=>alert('Link copied!'))" style="background:transparent;border:0.5px solid rgba(124,58,237,0.4);color:#b06ef3;padding:7px 10px;border-radius:7px;font-size:12px;cursor:pointer;"><i class="ti ti-link"></i></button>
+              <button onclick="deleteClient('${s.id}')" style="background:transparent;border:0.5px solid rgba(239,68,68,0.3);color:#f87171;padding:7px 10px;border-radius:7px;font-size:12px;cursor:pointer;"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>
+        `).join('');
+
+    drawer.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div style="font-size:14px;font-weight:600;color:#fff;">Client sessions</div>
+        <button onclick="toggleSessionsDrawer()" style="background:transparent;border:none;color:#8a8aaa;font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      ${content}
+      <div style="margin-top:16px;border-top:0.5px solid rgba(255,255,255,0.08);padding-top:16px;">
+        <button onclick="startNewSession();toggleSessionsDrawer();" style="width:100%;background:transparent;border:0.5px solid rgba(124,58,237,0.5);color:#b06ef3;padding:10px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;"><i class="ti ti-plus"></i> New session</button>
+      </div>
+    `;
+  } catch(err) {
+    drawer.innerHTML += '<div style="color:#f87171;font-size:13px;">Could not load sessions</div>';
+  }
+}
+
+
+
+// ─── PARTICLES────────────────────────────────
 (function() {
   const canvas = document.getElementById('particle-canvas');
   if (!canvas) return;
@@ -1126,7 +1948,7 @@ async function callAPI(idx, prompt) {
   draw();
 })();
 
-renderStep();
+checkUrlSession().then(loaded => { if (!loaded) startNewSession(); });
 </script>
 </body>
 </html>
