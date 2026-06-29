@@ -1,14 +1,17 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-// Proxy endpoint - browser calls this instead of Anthropic directly
 app.post('/api/generate', async (req, res) => {
   const key = process.env.ANTHROPIC_KEY || '';
+  
+  console.log('API call received');
+  console.log('Key present:', !!key);
+  console.log('Key starts with:', key.substring(0, 10));
+  
   if (!key) return res.status(500).json({ error: 'API key not configured' });
 
   try {
@@ -21,14 +24,18 @@ app.post('/api/generate', async (req, res) => {
       },
       body: JSON.stringify(req.body)
     });
+    
+    console.log('Anthropic response status:', response.status);
     const data = await response.json();
+    console.log('Anthropic response:', JSON.stringify(data).substring(0, 200));
+    
     res.json(data);
   } catch (err) {
+    console.log('Error:', err.message);
     res.status(500).json({ error: 'API call failed', detail: err.message });
   }
 });
 
-// Serve the HTML app
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
