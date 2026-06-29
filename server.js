@@ -7,15 +7,10 @@ app.use(express.json({ limit: '10mb' }));
 
 app.post('/api/generate', async (req, res) => {
   const key = process.env.ANTHROPIC_KEY || '';
-  
-  console.log('API call received');
-  console.log('Key present:', !!key);
-  console.log('Key starts with:', key.substring(0, 10));
-  
-  if (!key) return res.status(500).json({ error: 'API key not configured' });
-
+  console.log('Request received, key present:', !!key, 'starts:', key.slice(0,12));
+  if (!key) return res.status(500).json({ error: 'No API key found' });
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,24 +19,19 @@ app.post('/api/generate', async (req, res) => {
       },
       body: JSON.stringify(req.body)
     });
-    
-    console.log('Anthropic response status:', response.status);
-    const data = await response.json();
-    console.log('Anthropic response:', JSON.stringify(data).substring(0, 200));
-    
-    res.json(data);
+    const data = await r.json();
+    console.log('Anthropic status:', r.status, JSON.stringify(data).slice(0,100));
+    res.status(r.status).json(data);
   } catch (err) {
-    console.log('Error:', err.message);
-    res.status(500).json({ error: 'API call failed', detail: err.message });
+    console.log('Fetch error:', err.message);
+    res.status(500).json({ error: err.message });
   }
-});
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-app.listen(PORT, () => {
-  console.log(`Amplixity Workshop running on port ${PORT}`);
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+
+app.listen(PORT, () => console.log('Running on port', PORT));
