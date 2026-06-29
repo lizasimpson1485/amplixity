@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Amplixity GTM Workshop Tool</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/tabler-icons.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
 
@@ -64,16 +67,17 @@
     margin-bottom: 20px;
   }
   .section-title {
-    font-size: 12px; font-weight: 600; letter-spacing: 0.1em;
-    text-transform: uppercase; color: var(--color-purple-light);
-    display: flex; align-items: center; gap: 7px; margin-bottom: 4px;
+    font-size: 16px; font-weight: 700; letter-spacing: -0.02em;
+    text-transform: none; color: var(--color-purple-light);
+    font-family: var(--font-heading);
+    display: flex; align-items: center; gap: 6px; margin-bottom: 4px;
   }
-  .section-desc { font-size: 15px; color: var(--color-text-muted); margin-bottom: 18px; line-height: 1.5; }
+  .section-desc { font-size: 13px; color: var(--color-text-muted); margin-bottom: 16px; line-height: 1.5; }
 
   /* Fields */
   .field { margin-bottom: 14px; }
   .field:last-child { margin-bottom: 0; }
-  label { display: block; font-size: 15px; font-weight: 500; color: var(--color-text); margin-bottom: 5px; }
+  label { display: block; font-size: 13px; font-weight: 400; color: var(--color-text-muted); margin-bottom: 5px; }
   label .hint { font-weight: 400; color: var(--color-text-muted); }
   input[type=text], input[type=number], textarea, select {
     width: 100%; background: var(--color-card);
@@ -81,8 +85,8 @@
     border-radius: var(--radius-sm);
     color: var(--color-text);
     font-family: var(--font);
-    font-size: 15px;
-    padding: 10px 13px;
+    font-size: 14px;
+    padding: 9px 12px;
     outline: none;
     transition: border-color 0.15s;
     -webkit-appearance: none;
@@ -115,7 +119,7 @@
   /* Score buttons */
   .score-row { display: flex; align-items: center; gap: 16px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 0.5px solid var(--color-border); }
   .score-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-  .score-label { font-size: 15px; flex: 1; line-height: 1.4; }
+  .score-label { font-size: 13px; flex: 1; line-height: 1.4; color: var(--color-text); }
   .score-btns { display: flex; gap: 5px; }
   .score-btn {
     width: 34px; height: 34px;
@@ -242,6 +246,24 @@
   .cac-insight { margin-top: 14px; padding: 12px 14px; background: rgba(176,110,243,0.08); border-left: 3px solid var(--color-purple); border-radius: 0 var(--radius-sm) var(--radius-sm) 0; font-size: 14px; line-height: 1.6; color: var(--color-text-muted); }
   .cac-insight strong { color: var(--color-text); }
   .cac-empty { font-size: 14px; color: var(--color-text-muted); font-style: italic; padding: 8px 0; }
+
+
+
+  /* ── Heading font ── */
+  :root { --font-heading: 'Space Grotesk', var(--font); }
+  .section-title, .viz-header, .out-empty-title, .stat-val,
+  .viz-section h1, .viz-section h2, .viz-section h3,
+  .md-body h1, .md-body h2, .md-body h3,
+  .out-topbar .out-client-name, .stage-title,
+  .score-item-val, .cac-metric-val, .capacity-metric-val,
+  .output-block-title, .client-name, .logo-sub,
+  .out-generate-btn, .btn-next { font-family: var(--font-heading); }
+
+  /* Section titles get the italic style like "Let's build your revenue engine." */
+
+  .section-title i { font-style: normal; margin-right: 8px; }
+  .section-desc { font-size: 14px; }
+
 
 
   /* ── Particle / ambient background ── */
@@ -425,7 +447,7 @@
   .viz-section:nth-child(5) { animation-delay: 0.20s; }
   .viz-section:nth-child(6) { animation-delay: 0.25s; }
 
-  .viz-header { font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-purple-light); margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .viz-header { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; text-transform: none; color: var(--color-purple-light); margin-bottom: 14px; display: flex; align-items: center; gap: 8px; font-family: var(--font-heading); }
   .viz-header::after { content:''; flex:1; height:0.5px; background: linear-gradient(90deg, rgba(176,110,243,0.3), transparent); }
 
   /* Stat cards */
@@ -586,7 +608,7 @@ const outputDefs = [
   { title: 'Front-End Offer Concept', short: 'Entry offer', icon: 'ti-gift', desc: 'Low-risk paid entry offer your buyers can say yes to' },
   { title: '12-Month Pipeline Forecast', short: 'ROI forecast', icon: 'ti-trending-up', desc: 'Meetings → deals → revenue model with CPM benchmarks' },
   { title: '6-Stage Roadmap', short: 'Roadmap', icon: 'ti-map-2', desc: 'Sequence to install owned channel alongside referrals' },
-  { title: 'Channel Mix Recommendation', short: 'Channels', icon: 'ti-broadcast', desc: 'Where to surround your specific buyers and why' },
+  { title: 'Surround Your Prospects', short: 'Surround', icon: 'ti-radar', desc: 'Every channel your buyers use — and how to be everywhere they look' },
   { title: 'The Hiring Trap', short: 'Hiring trap', icon: 'ti-alert-triangle', desc: 'Why waiting to hire before getting demand is the riskier move' }
 ];
 
@@ -594,6 +616,7 @@ const outputDefs = [
 const steps = [
   {
     title: 'Company basics',
+    tagline: 'First, tell us about the business.',
     icon: 'ti-building',
     desc: 'Core business details for your GTM analysis',
     render: () => `
@@ -614,6 +637,7 @@ const steps = [
   },
   {
     title: 'Pipeline & deal metrics',
+    tagline: 'Where does your revenue actually come from?',
     icon: 'ti-chart-bar',
     desc: 'How your pipeline looks today — this powers the forecast model',
     render: () => `
@@ -631,6 +655,7 @@ const steps = [
   },
   {
     title: 'CAC & acquisition economics',
+    tagline: 'What can you actually afford to pay for a customer?',
     icon: 'ti-calculator',
     desc: 'Discover what you can actually afford to pay to acquire a customer — and how this connects to your growth goals',
     render: () => {
@@ -649,6 +674,7 @@ const steps = [
   },
   {
     title: 'Founder goals & vision',
+    tagline: 'What does winning look like — really?',
     icon: 'ti-star',
     desc: 'What does success actually look like for you — not just the business? These answers shape every recommendation.',
     render: () => `
@@ -695,6 +721,7 @@ const steps = [
   },
   {
     title: 'Growth reality check',
+    tagline: "What's actually standing in your way?",
     icon: 'ti-alert-triangle',
     desc: 'These questions surface the real constraints — answer them honestly, not aspirationally.',
     render: () => `
@@ -776,6 +803,7 @@ const steps = [
   },
   {
     title: 'Buyer & market',
+    tagline: 'Who are we trying to surround?',
     icon: 'ti-users',
     desc: 'Who you sell to, what they feel, and how you compete',
     render: () => `
@@ -800,6 +828,7 @@ const steps = [
   },
   {
     title: 'Readiness & offer',
+    tagline: 'Are you ready to scale what you have?',
     icon: 'ti-clipboard-check',
     desc: 'Core 4 scorecard inputs + current and desired offer structure',
     render: () => `
@@ -836,6 +865,7 @@ const steps = [
   },
   {
     title: 'Select outputs',
+    tagline: "Let's build your GTM intelligence pack.",
     icon: 'ti-sparkles',
     desc: 'Choose which deliverable to generate first — you can switch between all 10 after this step',
     render: () => `
@@ -1058,7 +1088,7 @@ function renderStep() {
   const s = steps[state.step];
   document.getElementById('steps-container').innerHTML = `
     <div class="section">
-      <div class="section-title"><i class="ti ${s.icon}"></i> ${s.title}</div>
+      <div class="section-title">${s.title}</div>
       <div class="section-desc">${s.desc}</div>
       ${s.render()}
     </div>
@@ -1211,7 +1241,7 @@ function renderVisualOutput(idx, text) {
     case 8: return renderRoadmapViz(d, text);
     case 9: return renderChannelViz(d, text);
     case 10: return renderHiringTrapViz(d, text);
-    default: return renderTextViz(text);
+    default: return renderTextViz(text, idx);
   }
 }
 
@@ -1234,12 +1264,15 @@ function renderPipelineViz(d, text) {
     </div>
   `).join('');
 
-  setTimeout(() => {
+  function animatePipeline(attempts) {
+    const first = document.getElementById('pbar-0');
+    if (!first && attempts < 20) { setTimeout(() => animatePipeline(attempts+1), 80); return; }
     sources.forEach(([,v],i) => {
       const el = document.getElementById('pbar-'+i);
       if (el) el.style.width = v+'%';
     });
-  }, 100);
+  }
+  setTimeout(() => animatePipeline(0), 50);
 
   return `<div class="viz-wrap">
     <div class="viz-section">
@@ -1293,12 +1326,15 @@ function renderScorecardViz(d, text) {
     </div>`;
   }).join('');
 
-  setTimeout(() => {
+  function animateScores(attempts) {
+    const first = document.getElementById('sfill-productScore');
+    if (!first && attempts < 20) { setTimeout(() => animateScores(attempts+1), 80); return; }
     scores.forEach(s => {
       const el = document.getElementById('sfill-'+s.key);
       if (el) el.style.width = ((d[s.key]||3)/5*100)+'%';
     });
-  }, 100);
+  }
+  setTimeout(() => animateScores(0), 50);
 
   return `<div class="viz-wrap">
     <div class="viz-section">
@@ -1334,9 +1370,9 @@ function renderForecastViz(d, text) {
   const revenuePerMonth = dealsPerMonth.map(d => Math.round(parseFloat(d) * acv));
   const cumRevenue = revenuePerMonth.reduce((acc,v,i) => { acc.push((acc[i-1]||0)+v); return acc; }, []);
 
-  setTimeout(() => {
+  function tryRenderForecast(attempts) {
     const ctx = document.getElementById('forecast-chart');
-    if (!ctx || !window.Chart) return;
+    if (!ctx || !window.Chart) { if (attempts < 20) setTimeout(() => tryRenderForecast(attempts+1), 100); return; }
     new Chart(ctx, {
       type: 'bar',
       data: {
@@ -1356,7 +1392,8 @@ function renderForecastViz(d, text) {
         }
       }
     });
-  }, 200);
+  }
+  setTimeout(() => tryRenderForecast(0), 50);
 
   const totalRev = cumRevenue[11];
   const totalMeetings = meetingsPerMonth.reduce((a,b)=>a+b,0);
@@ -1427,6 +1464,103 @@ function renderRoadmapViz(d, text) {
 }
 
 function renderChannelViz(d, text) {
+  // Channel awareness funnel data
+  const channels = [
+    { name:'LinkedIn Ads', type:'primary', icon:'ti-brand-linkedin', color:'#7c3aed', reach:'2.1M+ B2B decision-makers', cpl:'$80–$200', timing:'Always on', why:"Where your buyers spend 30 min/day consuming industry content" },
+    { name:'Google Search', type:'primary', icon:'ti-brand-google', color:'#4285f4', reach:'Intent-based search', cpl:'$40–$120', timing:'Always on', why:"Capture buyers actively searching for your solution right now" },
+    { name:'Meta / Instagram', type:'secondary', icon:'ti-brand-meta', color:'#1877f2', reach:'Retargeting + lookalikes', cpl:'$20–$80', timing:'Retargeting', why:"Stay visible after they visit your site — 7x more likely to convert" },
+    { name:'YouTube', type:'secondary', icon:'ti-brand-youtube', color:'#ff0000', reach:'Brand & education', cpl:'$15–$60', timing:'Brand building', why:"Long-form content that builds trust before the sales call" },
+    { name:'Email Nurture', type:'secondary', icon:'ti-mail', color:'#22c55e', reach:'Warm pipeline', cpl:'Near zero', timing:'Always on', why:"Automated sequences that educate and convert warm leads" },
+    { name:'Retargeting', type:'primary', icon:'ti-refresh', color:'#f59e0b', reach:'Site visitors', cpl:'$10–$40', timing:'Always on', why:"Re-engage the 97% who visited but didn't convert" }
+  ];
+
+  // Surround score - how many touchpoints before a deal
+  const acv = parseFloat(d.acv) || 75000;
+  const touchpoints = acv >= 100000 ? 18 : acv >= 50000 ? 12 : 8;
+  const channelCount = 4; // recommended channels
+
+  setTimeout(() => {
+    const ctx = document.getElementById('surround-chart');
+    if (!ctx || !window.Chart) { setTimeout(() => { const c2 = document.getElementById('surround-chart'); if(c2 && window.Chart) renderSurroundChart(c2); }, 300); return; }
+    renderSurroundChart(ctx);
+  }, 100);
+
+  function renderSurroundChart(ctx) {
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['LinkedIn', 'Google Search', 'Meta/Instagram', 'YouTube', 'Email Nurture', 'Retargeting'],
+        datasets: [{
+          label: 'Recommended investment',
+          data: [90, 75, 60, 45, 70, 80],
+          borderColor: '#7c3aed',
+          backgroundColor: 'rgba(124,58,237,0.2)',
+          pointBackgroundColor: '#b06ef3',
+          pointRadius: 5
+        }, {
+          label: 'Typical competitor spend',
+          data: [40, 30, 20, 15, 25, 20],
+          borderColor: '#8ab0e8',
+          backgroundColor: 'rgba(138,176,232,0.1)',
+          pointBackgroundColor: '#8ab0e8',
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } } },
+        scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.08)' }, pointLabels: { color: '#f0f0f5', font: { size: 12 } }, angleLines: { color: 'rgba(255,255,255,0.08)' } } }
+      }
+    });
+  }
+
+  const channelCards = channels.map(c => `
+    <div style="background:var(--color-card);border:0.5px solid var(--color-border);border-top:2px solid ${c.color};border-radius:var(--radius-md);padding:14px 16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <i class="ti ${c.icon}" style="font-size:18px;color:${c.color};"></i>
+        <div style="font-size:14px;font-weight:600;color:#fff;">${c.name}</div>
+        ${c.type==='primary' ? '<span style="font-size:10px;font-weight:700;background:rgba(124,58,237,0.3);color:#b06ef3;padding:2px 8px;border-radius:10px;">PRIMARY</span>' : '<span style="font-size:10px;font-weight:700;background:rgba(138,176,232,0.15);color:#8ab0e8;padding:2px 8px;border-radius:10px;">SUPPORT</span>'}
+      </div>
+      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:6px;">${c.why}</div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;">
+        <span style="color:#8ab0e8;">CPL: <strong style="color:#fff;">${c.cpl}</strong></span>
+        <span style="color:#8ab0e8;">${c.timing}</span>
+      </div>
+    </div>
+  `).join('');
+
+  return `<div class="viz-wrap">
+    <div class="viz-section">
+      <div class="viz-header" style="color:#b06ef3;"><i class="ti ti-radar"></i> Surround your prospects — everywhere they look</div>
+      <div class="stat-grid" style="margin-bottom:20px;">
+        <div class="stat-card highlight">
+          <div class="stat-val">${touchpoints}</div>
+          <div class="stat-label">Touchpoints before a deal at your ACV</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">${channelCount}</div>
+          <div class="stat-label">Recommended active channels</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-val">3–5x</div>
+          <div class="stat-label">Higher conversion with multi-channel vs single</div>
+        </div>
+      </div>
+      <div class="chart-wrap" style="height:320px;margin-bottom:20px;">
+        <canvas id="surround-chart"></canvas>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        ${channelCards}
+      </div>
+    </div>
+    <div class="viz-section">
+      <div class="viz-header"><i class="ti ti-list-details"></i> Full surround strategy</div>
+      ${renderMarkdown(text)}
+    </div>
+  </div>`;
+}
+
+function renderChannelVizOLD(d, text) {
   const channels = [
     { name:'LinkedIn Ads', type:'primary', icon:'ti-brand-linkedin', cpl:'$80–$200', why:'Best for B2B decision-makers' },
     { name:'Google Search', type:'secondary', icon:'ti-brand-google', cpl:'$40–$120', why:'Capture active demand' },
@@ -1496,9 +1630,9 @@ function renderHiringTrapViz(d, text) {
   const totalGainB = cumB[5];
   const unusedCapacity = Math.round(((capacity - Math.ceil(dealsPerMonth)) / capacity) * 100);
 
-  setTimeout(() => {
+  function tryRenderHiring(attempts) {
     const ctx = document.getElementById('hiring-trap-chart');
-    if (!ctx || !window.Chart) return;
+    if (!ctx || !window.Chart) { if (attempts < 20) setTimeout(() => tryRenderHiring(attempts+1), 100); return; }
     new Chart(ctx, {
       type: 'line',
       data: {
@@ -1534,7 +1668,8 @@ function renderHiringTrapViz(d, text) {
         }
       }
     });
-  }, 200);
+  }
+  setTimeout(() => tryRenderHiring(0), 50);
 
   return `<div class="viz-wrap">
     <div class="viz-section">
@@ -1576,8 +1711,45 @@ function renderHiringTrapViz(d, text) {
 }
 
 
-function renderTextViz(text) {
-  return `<div class="viz-wrap"><div class="viz-section">${renderMarkdown(text)}</div></div>`;
+function renderTextViz(text, idx) {
+  const def = outputDefs[idx] || {};
+  const d = state.data;
+  // Add a relevant stat header based on which output it is
+  let statHeader = '';
+  if (idx === 1) { // Message-Market-Fit
+    statHeader = `<div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-card amber"><div class="stat-val">Cold</div><div class="stat-label">Current market reach</div></div>
+      <div class="stat-card"><div class="stat-val">${d.painPoints ? '3' : '?'}</div><div class="stat-label">Buyer pain points identified</div></div>
+      <div class="stat-card green"><div class="stat-val">Gap</div><div class="stat-label">Message vs. buyer language</div></div>
+    </div>`;
+  } else if (idx === 2) { // ICP & TAM
+    statHeader = `<div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-card highlight"><div class="stat-val">5K+</div><div class="stat-label">Minimum TAM floor for paid media</div></div>
+      <div class="stat-card"><div class="stat-val">${d.industry || 'B2B'}</div><div class="stat-label">Target vertical</div></div>
+      <div class="stat-card green"><div class="stat-val">20%</div><div class="stat-label">Tier 1 accounts = 80% of revenue</div></div>
+    </div>`;
+  } else if (idx === 3) { // Competitive
+    const compCount = d.competitors ? d.competitors.split(',').length : 0;
+    statHeader = `<div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-val">${compCount}</div><div class="stat-label">Named competitors</div></div>
+      <div class="stat-card amber"><div class="stat-val">Wedge</div><div class="stat-label">Unused positioning angle</div></div>
+      <div class="stat-card green"><div class="stat-val">Own</div><div class="stat-label">Category creation opportunity</div></div>
+    </div>`;
+  } else if (idx === 4) { // GTM Plan
+    statHeader = `<div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-val">3</div><div class="stat-label">Funnel stages to map</div></div>
+      <div class="stat-card amber"><div class="stat-val">30</div><div class="stat-label">Days to first quick wins</div></div>
+      <div class="stat-card green"><div class="stat-val">90</div><div class="stat-label">Day sprint to results</div></div>
+    </div>`;
+  } else if (idx === 6) { // Front-end offer
+    const acv = parseFloat(d.acv) || 75000;
+    statHeader = `<div class="stat-grid" style="margin-bottom:20px;">
+      <div class="stat-card"><div class="stat-val">$${Math.round(acv/1000)}K</div><div class="stat-label">Current ACV — high barrier</div></div>
+      <div class="stat-card green"><div class="stat-val">$1–3K</div><div class="stat-label">Ideal entry offer range</div></div>
+      <div class="stat-card highlight"><div class="stat-val">3–5x</div><div class="stat-label">Higher close rate with entry offer</div></div>
+    </div>`;
+  }
+  return `<div class="viz-wrap"><div class="viz-section">${statHeader}${renderMarkdown(text)}</div></div>`;
 }
 
 function renderTabContent(idx) {
