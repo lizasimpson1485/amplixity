@@ -100,6 +100,7 @@
   select option { background: #1a1a2e; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid3 input, .grid3 select { min-width: 0; }
 
   /* Pipeline sources */
   .source-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 6px; }
@@ -606,10 +607,10 @@ const outputDefs = [
   { title: 'GTM Plan', short: 'GTM plan', icon: 'ti-rocket', desc: 'Prospect journey, sample ads, missed opportunities' },
   { title: 'Core 4 Scorecard', short: 'Scorecard', icon: 'ti-clipboard-check', desc: 'Product / Audience / Offer / Funnel scored 1–5' },
   { title: 'Front-End Offer Concept', short: 'Entry offer', icon: 'ti-gift', desc: 'Low-risk paid entry offer your buyers can say yes to' },
+  { title: 'The Hiring Trap', short: 'Hiring trap', icon: 'ti-alert-triangle', desc: 'Why waiting to hire before getting demand is the riskier move' },
   { title: '12-Month Pipeline Forecast', short: 'ROI forecast', icon: 'ti-trending-up', desc: 'Meetings → deals → revenue model with CPM benchmarks' },
   { title: '6-Stage Roadmap', short: 'Roadmap', icon: 'ti-map-2', desc: 'Sequence to install owned channel alongside referrals' },
-  { title: 'Surround Your Prospects', short: 'Surround', icon: 'ti-radar', desc: 'Every channel your buyers use — and how to be everywhere they look' },
-  { title: 'The Hiring Trap', short: 'Hiring trap', icon: 'ti-alert-triangle', desc: 'Why waiting to hire before getting demand is the riskier move' }
+  { title: 'The Swarm Method', short: 'Swarm method', icon: 'ti-radar', desc: 'Every channel your buyers use — surrounding them at every touchpoint' }
 ];
 
 
@@ -864,18 +865,28 @@ const steps = [
     `
   },
   {
-    title: 'Select outputs',
+    title: 'Ready to generate',
     tagline: "Let's build your GTM intelligence pack.",
     icon: 'ti-sparkles',
-    desc: 'Choose which deliverable to generate first — you can switch between all 10 after this step',
+    desc: 'All inputs collected. Click below to generate all 10 outputs simultaneously.',
     render: () => `
-      <div class="output-grid">
-        ${outputDefs.map((o,i) => `
-          <div class="output-card${state.selectedOutput===i?' selected':''}" onclick="selectOutput(${i})">
-            <div class="output-card-title"><i class="ti ${o.icon}" style="font-size:14px;"></i>${o.title}</div>
-            <div class="output-card-desc">${o.desc}</div>
-          </div>
-        `).join('')}
+      <div style="text-align:center; padding: 32px 0 16px;">
+        <div style="font-size:48px; margin-bottom:20px;">
+          ${outputDefs.map(o => `<i class="ti ${o.icon}" style="font-size:22px; color:var(--color-purple-light); opacity:0.6; margin:4px;"></i>`).join('')}
+        </div>
+        <div style="font-size:18px; font-weight:600; color:#fff; font-family:var(--font-heading); margin-bottom:10px;">Your GTM intelligence pack is ready to build</div>
+        <div style="font-size:14px; color:var(--color-text-muted); max-width:480px; margin:0 auto 28px; line-height:1.7;">
+          We'll generate all 10 deliverables simultaneously using everything you've just told us. 
+          Takes about 60 seconds.
+        </div>
+        <div style="display:grid; grid-template-columns: repeat(5,1fr); gap:8px; max-width:600px; margin:0 auto;">
+          ${outputDefs.map(o => `
+            <div style="background:var(--color-card);border:0.5px solid var(--color-border);border-radius:var(--radius-md);padding:10px 8px;text-align:center;">
+              <i class="ti ${o.icon}" style="font-size:18px;color:var(--color-purple-light);display:block;margin-bottom:4px;"></i>
+              <div style="font-size:10px;color:var(--color-text-muted);line-height:1.3;">${o.short}</div>
+            </div>
+          `).join('')}
+        </div>
       </div>
     `
   }
@@ -1095,7 +1106,7 @@ function renderStep() {
     <div class="nav">
       ${state.step > 0 ? `<button class="btn-back" onclick="prevStep()"><i class="ti ti-arrow-left"></i> Back</button>` : '<div></div>'}
       <button class="btn-next" onclick="nextStep()">
-        ${state.step < steps.length-1 ? 'Continue <i class="ti ti-arrow-right"></i>' : '<i class="ti ti-sparkles"></i> Go to outputs'}
+        ${state.step < steps.length-1 ? 'Continue <i class="ti ti-arrow-right"></i>' : '<i class="ti ti-sparkles"></i> Generate all 10 outputs'}
       </button>
     </div>
   `;
@@ -1113,10 +1124,14 @@ function updateProgress() {
 
 function nextStep() {
   saveStep();
-  if (state.step < steps.length-1) { state.step++; renderStep(); }
-  else {
-    document.getElementById('main-container').style.maxWidth = '100%'; document.getElementById('main-container').style.padding = '0 20px';
+  if (state.step < steps.length-1) {
+    state.step++;
+    renderStep();
+  } else {
+    document.getElementById('main-container').style.maxWidth = '100%';
+    document.getElementById('main-container').style.padding = '0 20px';
     showOutputPanel();
+    setTimeout(() => generateAll(), 400);
   }
 }
 
@@ -1237,10 +1252,10 @@ function renderVisualOutput(idx, text) {
   switch(idx) {
     case 0: return renderPipelineViz(d, text);
     case 5: return renderScorecardViz(d, text);
-    case 7: return renderForecastViz(d, text);
-    case 8: return renderRoadmapViz(d, text);
-    case 9: return renderChannelViz(d, text);
-    case 10: return renderHiringTrapViz(d, text);
+    case 7: return renderHiringTrapViz(d, text);
+    case 8: return renderForecastViz(d, text);
+    case 9: return renderRoadmapViz(d, text);
+    case 10: return renderChannelViz(d, text);
     default: return renderTextViz(text, idx);
   }
 }
@@ -1248,58 +1263,55 @@ function renderVisualOutput(idx, text) {
 function renderPipelineViz(d, text) {
   const sources = Object.entries(d.sources).filter(([,v])=>v>0).sort(([,a],[,b])=>b-a);
   const topSource = sources[0];
-  const topPct = topSource ? topSource[1] : 0;
+  const topPct = topSource ? parseInt(topSource[1]) : 0;
   const risk = topPct >= 60 ? 'HIGH' : topPct >= 40 ? 'MEDIUM' : 'LOW';
   const riskClass = topPct >= 60 ? 'red' : topPct >= 40 ? 'amber' : 'low';
+  const diversityLabel = sources.length <= 2 ? 'Fragile' : sources.length <= 3 ? 'Moderate' : 'Diverse';
+  const diversityClass = sources.length <= 2 ? 'red' : sources.length <= 3 ? 'amber' : 'green';
 
-  const barsHtml = sources.map(([k,v],i) => `
-    <div class="pipeline-bar-row">
-      <div class="pipeline-bar-label">${k.charAt(0).toUpperCase()+k.slice(1)}</div>
-      <div class="pipeline-bar-track">
-        <div class="pipeline-bar-fill" id="pbar-${i}" style="width:0%;background:${riskColor(v)};">
-          ${v >= 15 ? k.charAt(0).toUpperCase()+k.slice(1) : ''}
-        </div>
-      </div>
-      <div class="pipeline-bar-pct">${v}%</div>
-    </div>
-  `).join('');
+  const barsHtml = sources.map(([k,v],i) => 
+    '<div class="pipeline-bar-row">' +
+    '<div class="pipeline-bar-label">' + k.charAt(0).toUpperCase()+k.slice(1) + '</div>' +
+    '<div class="pipeline-bar-track"><div class="pipeline-bar-fill" id="pbar-'+i+'" style="width:0%;background:'+riskColor(v)+';">' +
+    (v >= 15 ? k.charAt(0).toUpperCase()+k.slice(1) : '') + '</div></div>' +
+    '<div class="pipeline-bar-pct">' + v + '%</div>' +
+    '</div>'
+  ).join('');
 
   function animatePipeline(attempts) {
     const first = document.getElementById('pbar-0');
     if (!first && attempts < 20) { setTimeout(() => animatePipeline(attempts+1), 80); return; }
-    sources.forEach(([,v],i) => {
-      const el = document.getElementById('pbar-'+i);
-      if (el) el.style.width = v+'%';
-    });
+    sources.forEach(([,v],i) => { const el = document.getElementById('pbar-'+i); if (el) el.style.width = v+'%'; });
   }
   setTimeout(() => animatePipeline(0), 50);
 
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-chart-pie"></i> Pipeline source breakdown</div>
-      <div class="stat-grid" style="margin-bottom:20px;">
-        <div class="stat-card ${riskClass}">
-          <div class="stat-val">${topPct}%</div>
-          <div class="stat-label">${topSource ? topSource[0] : 'Top'} dependency</div>
-          <div class="stat-badge ${riskClass}">${risk} RISK</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">${sources.length}</div>
-          <div class="stat-label">Active pipeline sources</div>
-        </div>
-        <div class="stat-card ${sources.length <= 2 ? 'red' : sources.length <= 3 ? 'amber' : 'green'}">
-          <div class="stat-val">${sources.length <= 2 ? 'Fragile' : sources.length <= 3 ? 'Moderate' : 'Diverse'}</div>
-          <div class="stat-label">Source diversity rating</div>
-        </div>
-      </div>
-      <div class="pipeline-bars">${barsHtml}</div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-alert-triangle"></i> Analysis</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
+  return '<div class="viz-wrap">' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-chart-pie"></i> Pipeline source breakdown</div>' +
+    '<div class="stat-grid" style="margin-bottom:20px;">' +
+      '<div class="stat-card ' + riskClass + '">' +
+        '<div class="stat-val">' + topPct + '%</div>' +
+        '<div class="stat-label">' + (topSource ? topSource[0].charAt(0).toUpperCase()+topSource[0].slice(1) : 'Top') + ' dependency</div>' +
+        '<div class="stat-badge ' + riskClass + '">' + risk + ' RISK</div>' +
+      '</div>' +
+      '<div class="stat-card">' +
+        '<div class="stat-val">' + sources.length + '</div>' +
+        '<div class="stat-label">Active pipeline sources</div>' +
+      '</div>' +
+      '<div class="stat-card ' + diversityClass + '">' +
+        '<div class="stat-val">' + diversityLabel + '</div>' +
+        '<div class="stat-label">Source diversity rating</div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="pipeline-bars">' + barsHtml + '</div>' +
+    '</div>' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-alert-triangle"></i> Analysis</div>' +
+    renderMarkdown(text) +
+    '</div>' +
+    '</div>';
 }
+
 
 function renderScorecardViz(d, text) {
   const scores = [
@@ -1314,50 +1326,49 @@ function renderScorecardViz(d, text) {
 
   const scoreHtml = scores.map(s => {
     const val = d[s.key] || 3;
-    const pct = (val/5)*100;
     const col = scoreColor(val);
-    return `<div class="score-item">
-      <div class="score-item-header">
-        <div class="score-item-label">${s.label}</div>
-        <div class="score-item-val" style="color:${col};">${val}/5</div>
-      </div>
-      <div class="score-track"><div class="score-fill" id="sfill-${s.key}" style="width:0%;background:${col};"></div></div>
-      <div class="score-diagnosis">${s.desc}</div>
-    </div>`;
+    return '<div class="score-item">' +
+      '<div class="score-item-header">' +
+        '<div class="score-item-label">' + s.label + '</div>' +
+        '<div class="score-item-val" style="color:' + col + ';">' + val + '/5</div>' +
+      '</div>' +
+      '<div class="score-track"><div class="score-fill" id="sfill-' + s.key + '" style="width:0%;background:' + col + ';"></div></div>' +
+      '<div class="score-diagnosis">' + s.desc + '</div>' +
+    '</div>';
   }).join('');
+
+  const statCards = scores.map(s =>
+    '<div class="stat-card ' + scoreLabel(d[s.key]||3) + '">' +
+      '<div class="stat-val">' + (d[s.key]||3) + '/5</div>' +
+      '<div class="stat-label">' + s.label + '</div>' +
+    '</div>'
+  ).join('');
 
   function animateScores(attempts) {
     const first = document.getElementById('sfill-productScore');
     if (!first && attempts < 20) { setTimeout(() => animateScores(attempts+1), 80); return; }
-    scores.forEach(s => {
-      const el = document.getElementById('sfill-'+s.key);
-      if (el) el.style.width = ((d[s.key]||3)/5*100)+'%';
-    });
+    scores.forEach(s => { const el = document.getElementById('sfill-'+s.key); if (el) el.style.width = ((d[s.key]||3)/5*100)+'%'; });
   }
   setTimeout(() => animateScores(0), 50);
 
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-clipboard-check"></i> Scale readiness</div>
-      <div class="stat-grid" style="margin-bottom:24px;">
-        <div class="stat-card ${verdictClass}">
-          <div class="stat-val">${avg}</div>
-          <div class="stat-label">Overall score</div>
-          <div class="stat-badge ${verdictClass}">${verdict}</div>
-        </div>
-        ${scores.map(s => `<div class="stat-card ${scoreLabel(d[s.key]||3)}">
-          <div class="stat-val">${d[s.key]||3}/5</div>
-          <div class="stat-label">${s.label}</div>
-        </div>`).join('')}
-      </div>
-      <div class="score-display">${scoreHtml}</div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-bulb"></i> Recommendations</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
+  return '<div class="viz-wrap">' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-clipboard-check"></i> Scale readiness</div>' +
+    '<div class="stat-grid" style="margin-bottom:24px;">' +
+      '<div class="stat-card ' + verdictClass + '">' +
+        '<div class="stat-val">' + avg + '</div>' +
+        '<div class="stat-label">Overall score</div>' +
+        '<div class="stat-badge ' + verdictClass + '">' + verdict + '</div>' +
+      '</div>' + statCards +
+    '</div>' +
+    '<div class="score-display">' + scoreHtml + '</div>' +
+    '</div>' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-bulb"></i> Recommendations</div>' +
+    renderMarkdown(text) +
+    '</div></div>';
 }
+
 
 function renderForecastViz(d, text) {
   const acv = parseFloat(d.acv)||75000;
