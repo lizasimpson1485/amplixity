@@ -36,7 +36,7 @@
     min-height: 100vh;
     padding: 32px 24px 60px;
   }
-  .container { max-width: 960px; margin: 0 auto; }
+  .container { max-width: 1100px; margin: 0 auto; }
   .container.output-active { max-width: 1100px; }
 
   /* Header */
@@ -1605,194 +1605,69 @@ function renderRoadmapViz(d, text) {
 
 
 function renderChannelViz(d, text) {
-  // Channel awareness funnel data
-  const channels = [
-    { name:'LinkedIn Ads', type:'primary', icon:'ti-brand-linkedin', color:'#7c3aed', reach:'2.1M+ B2B decision-makers', cpl:'$80–$200', timing:'Always on', why:"Where your buyers spend 30 min/day consuming industry content" },
-    { name:'Google Search', type:'primary', icon:'ti-brand-google', color:'#4285f4', reach:'Intent-based search', cpl:'$40–$120', timing:'Always on', why:"Capture buyers actively searching for your solution right now" },
-    { name:'Meta / Instagram', type:'secondary', icon:'ti-brand-meta', color:'#1877f2', reach:'Retargeting + lookalikes', cpl:'$20–$80', timing:'Retargeting', why:"Stay visible after they visit your site — 7x more likely to convert" },
-    { name:'YouTube', type:'secondary', icon:'ti-brand-youtube', color:'#ff0000', reach:'Brand & education', cpl:'$15–$60', timing:'Brand building', why:"Long-form content that builds trust before the sales call" },
-    { name:'Email Nurture', type:'secondary', icon:'ti-mail', color:'#22c55e', reach:'Warm pipeline', cpl:'Near zero', timing:'Always on', why:"Automated sequences that educate and convert warm leads" },
-    { name:'Retargeting', type:'primary', icon:'ti-refresh', color:'#f59e0b', reach:'Site visitors', cpl:'$10–$40', timing:'Always on', why:"Re-engage the 97% who visited but didn't convert" }
-  ];
-
-  // Surround score - how many touchpoints before a deal
-  const acv = parseFloat(d.acv) || 75000;
+  const acv = parseFloat(d.acv)||75000;
   const touchpoints = acv >= 100000 ? 18 : acv >= 50000 ? 12 : 8;
-  const channelCount = 4; // recommended channels
 
-  setTimeout(() => {
+  function tryChart(attempts) {
     const ctx = document.getElementById('surround-chart');
-    if (!ctx || !window.Chart) { setTimeout(() => { const c2 = document.getElementById('surround-chart'); if(c2 && window.Chart) renderSurroundChart(c2); }, 300); return; }
-    renderSurroundChart(ctx);
-  }, 100);
-
-  function renderSurroundChart(ctx) {
+    if (!ctx||!window.Chart) { if(attempts<20) setTimeout(()=>tryChart(attempts+1),100); return; }
     new Chart(ctx, {
       type: 'radar',
       data: {
-        labels: ['LinkedIn', 'Google Search', 'Meta/Instagram', 'YouTube', 'Email Nurture', 'Retargeting'],
-        datasets: [{
-          label: 'Recommended investment',
-          data: [90, 75, 60, 45, 70, 80],
-          borderColor: '#7c3aed',
-          backgroundColor: 'rgba(124,58,237,0.2)',
-          pointBackgroundColor: '#b06ef3',
-          pointRadius: 5
-        }, {
-          label: 'Typical competitor spend',
-          data: [40, 30, 20, 15, 25, 20],
-          borderColor: '#8ab0e8',
-          backgroundColor: 'rgba(138,176,232,0.1)',
-          pointBackgroundColor: '#8ab0e8',
-          pointRadius: 4
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } } },
-        scales: { r: { ticks: { display: false }, grid: { color: 'rgba(255,255,255,0.08)' }, pointLabels: { color: '#f0f0f5', font: { size: 12 } }, angleLines: { color: 'rgba(255,255,255,0.08)' } } }
-      }
-    });
-  }
-
-  const channelCards = channels.map(c => `
-    <div style="background:var(--color-card);border:0.5px solid var(--color-border);border-top:2px solid ${c.color};border-radius:var(--radius-md);padding:14px 16px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <i class="ti ${c.icon}" style="font-size:18px;color:${c.color};"></i>
-        <div style="font-size:14px;font-weight:600;color:#fff;">${c.name}</div>
-        ${c.type==='primary' ? '<span style="font-size:10px;font-weight:700;background:rgba(124,58,237,0.3);color:#b06ef3;padding:2px 8px;border-radius:10px;">PRIMARY</span>' : '<span style="font-size:10px;font-weight:700;background:rgba(138,176,232,0.15);color:#8ab0e8;padding:2px 8px;border-radius:10px;">SUPPORT</span>'}
-      </div>
-      <div style="font-size:12px;color:var(--color-text-muted);margin-bottom:6px;">${c.why}</div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;">
-        <span style="color:#8ab0e8;">CPL: <strong style="color:#fff;">${c.cpl}</strong></span>
-        <span style="color:#8ab0e8;">${c.timing}</span>
-      </div>
-    </div>
-  `).join('');
-
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header" style="color:#b06ef3;"><i class="ti ti-radar"></i> Surround your prospects — everywhere they look</div>
-      <div class="stat-grid" style="margin-bottom:20px;">
-        <div class="stat-card highlight">
-          <div class="stat-val">${touchpoints}</div>
-          <div class="stat-label">Touchpoints before a deal at your ACV</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">${channelCount}</div>
-          <div class="stat-label">Recommended active channels</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-val">3–5x</div>
-          <div class="stat-label">Higher conversion with multi-channel vs single</div>
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:320px;margin-bottom:20px;">
-        <canvas id="surround-chart"></canvas>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
-        ${channelCards}
-      </div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-list-details"></i> Full surround strategy</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
-}
-
-function renderChannelVizOLD(d, text) {
-  const channels = [
-    { name:'LinkedIn Ads', type:'primary', icon:'ti-brand-linkedin', cpl:'$80–$200', why:'Best for B2B decision-makers' },
-    { name:'Google Search', type:'secondary', icon:'ti-brand-google', cpl:'$40–$120', why:'Capture active demand' },
-    { name:'Meta Ads', type:'secondary', icon:'ti-brand-meta', cpl:'$20–$80', why:'Retargeting & awareness' },
-    { name:'YouTube', type:'secondary', icon:'ti-brand-youtube', cpl:'$15–$60', why:'Brand building at scale' },
-    { name:'Cold Email', type:'avoid', icon:'ti-mail', cpl:'Risky', why:'Burns list, low intent' },
-    { name:'Trade Shows', type:'avoid', icon:'ti-building-community', cpl:'Very high', why:'Unpredictable, hard to scale' }
-  ];
-
-  const channelHtml = channels.map(c => `
-    <div class="channel-pill ${c.type}">
-      <i class="ti ${c.icon}" style="font-size:16px;color:${c.type==='primary'?'var(--color-purple-light)':c.type==='avoid'?'#f87171':'#8ab0e8'};"></i>
-      <div>
-        <div class="channel-name">${c.name}</div>
-        <div class="channel-cpl">${c.type==='avoid'?'⚠ Avoid for now':c.cpl+' CPL'}</div>
-      </div>
-    </div>
-  `).join('');
-
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-broadcast"></i> Recommended channel mix</div>
-      <div class="channel-grid" style="margin-bottom:20px;">${channelHtml}</div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-list-details"></i> Full channel strategy</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
-}
-
-function renderHiringTrapViz(d, text) {
-  const acv = parseFloat(d.acv)||75000;
-  const cr = parseFloat(d.closeRate)||25;
-  const capacity = parseInt(d.monthlyDealCapacity)||4;
-  const cpm = 400;
-  const mediaBudget = 5000;
-  const meetingsPerMonth = Math.round(mediaBudget/cpm);
-  const dealsPerMonth = meetingsPerMonth*(cr/100);
-  const revenuePerMonth = dealsPerMonth*acv;
-  const salesSalary = 100000/12;
-  const unusedCapacity = Math.max(0, Math.round(((capacity-Math.ceil(dealsPerMonth))/capacity)*100));
-
-  // Path A: Hire first (cumulative cash flow)
-  const cumA = [-salesSalary, -salesSalary*2, -salesSalary*2.7, -salesSalary*2.2, -salesSalary*1.2, revenuePerMonth*0.3].map(Math.round);
-  // Path B: Demand first (cumulative cash flow)
-  const cumB = [-mediaBudget, revenuePerMonth*0.2-mediaBudget*2, revenuePerMonth*0.6-mediaBudget*3, revenuePerMonth*1.1-mediaBudget*4, revenuePerMonth*1.8-mediaBudget*5, revenuePerMonth*2.5-mediaBudget*6].map(Math.round);
-
-  const totalRiskA = Math.abs(Math.min(...cumA));
-  const totalGainB = cumB[5];
-
-  function tryChart(attempts) {
-    const ctx = document.getElementById('hiring-trap-chart');
-    if (!ctx||!window.Chart) { if(attempts<20) setTimeout(()=>tryChart(attempts+1),100); return; }
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: ['M1','M2','M3','M4','M5','M6'],
+        labels: ['LinkedIn','Google Search','Meta/Instagram','YouTube','Email Nurture','Retargeting'],
         datasets: [
-          { label: 'Path A: Hire first', data: cumA, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#ef4444', borderWidth: 2 },
-          { label: 'Path B: Demand first', data: cumB, borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#4ade80', borderWidth: 2 }
+          { label: 'Recommended investment', data: [90,75,60,45,70,80], borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.2)', pointBackgroundColor: '#b06ef3', pointRadius: 5, borderWidth: 2 },
+          { label: 'Typical competitor', data: [40,30,20,15,25,20], borderColor: '#8ab0e8', backgroundColor: 'rgba(138,176,232,0.08)', pointBackgroundColor: '#8ab0e8', pointRadius: 4, borderWidth: 1, borderDash: [4,4] }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } }, tooltip: { callbacks: { label: c => c.dataset.label+': $'+Math.round(c.parsed.y).toLocaleString() } } },
-        scales: {
-          x: { ticks: { color: '#8a8aaa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { ticks: { color: '#8a8aaa', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { color: 'rgba(255,255,255,0.04)' } }
-        }
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } } },
+        scales: { r: {
+          min: 0, max: 100,
+          ticks: { display: false },
+          grid: { color: 'rgba(255,255,255,0.08)' },
+          pointLabels: { color: '#f0f0f5', font: { size: 13, weight: '600' } },
+          angleLines: { color: 'rgba(255,255,255,0.08)' }
+        }}
       }
     });
   }
-  setTimeout(()=>tryChart(0),80);
+  setTimeout(()=>tryChart(0), 80);
+
+  const channels = [
+    { name:'LinkedIn Ads', icon:'ti-brand-linkedin', color:'#7c3aed', type:'PRIMARY', cpl:'$80-200', why:'Where your B2B buyers spend 30 min/day' },
+    { name:'Google Search', icon:'ti-brand-google', color:'#4285f4', type:'PRIMARY', cpl:'$40-120', why:'Capture buyers actively searching for your solution' },
+    { name:'Meta Retargeting', icon:'ti-brand-meta', color:'#1877f2', type:'SUPPORT', cpl:'$20-80', why:'7x more likely to convert after site visit' },
+    { name:'YouTube', icon:'ti-brand-youtube', color:'#ff0000', type:'SUPPORT', cpl:'$15-60', why:'Build trust before the sales call' },
+    { name:'Email Nurture', icon:'ti-mail', color:'#22c55e', type:'SUPPORT', cpl:'Near $0', why:'Convert warm pipeline automatically' },
+    { name:'Retargeting', icon:'ti-refresh', color:'#f59e0b', type:'PRIMARY', cpl:'$10-40', why:"Re-engage the 97% who didn't convert" }
+  ];
+
+  const cardHtml = channels.map(c =>
+    '<div style="background:var(--color-card);border:0.5px solid var(--color-border);border-top:3px solid '+c.color+';border-radius:var(--radius-md);padding:12px 14px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">' +
+        '<i class="ti '+c.icon+'" style="font-size:16px;color:'+c.color+';"></i>' +
+        '<div style="font-size:13px;font-weight:600;color:#fff;flex:1;">'+c.name+'</div>' +
+        '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:rgba(124,58,237,'+(c.type==='PRIMARY'?'0.25':'0.1')+');color:'+(c.type==='PRIMARY'?'#b06ef3':'#8ab0e8')+';">'+c.type+'</span>' +
+      '</div>' +
+      '<div style="font-size:12px;color:var(--color-text-muted);margin-bottom:6px;">'+c.why+'</div>' +
+      '<div style="font-size:12px;color:#8ab0e8;">CPL: <strong style="color:#fff;">'+c.cpl+'</strong></div>' +
+    '</div>'
+  ).join('');
 
   return '<div class="viz-wrap">' +
     '<div class="viz-section">' +
     '<div class="stat-grid" style="margin-bottom:16px;">' +
-      '<div class="stat-card red"><div class="stat-val">$'+Math.round(totalRiskA/1000)+'K</div><div class="stat-label">Cash at risk: hire first path</div><div class="stat-badge high">HIGH RISK</div></div>' +
-      '<div class="stat-card green"><div class="stat-val">$'+Math.round(totalGainB/1000)+'K</div><div class="stat-label">Net gain: demand first path</div><div class="stat-badge good">LOWER RISK</div></div>' +
-      '<div class="stat-card amber"><div class="stat-val">'+unusedCapacity+'%</div><div class="stat-label">Unused deal capacity right now</div></div>' +
-      '<div class="stat-card"><div class="stat-val">$'+Math.round(mediaBudget/1000)+'K</div><div class="stat-label">Monthly media vs $'+Math.round(salesSalary/1000)+'K salary</div></div>' +
+      '<div class="stat-card highlight"><div class="stat-val">'+touchpoints+'</div><div class="stat-label">Touchpoints needed before a deal at your ACV</div></div>' +
+      '<div class="stat-card"><div class="stat-val">3</div><div class="stat-label">Primary channels recommended</div></div>' +
+      '<div class="stat-card green"><div class="stat-val">3–5x</div><div class="stat-label">Higher conversion: multi-channel vs single</div></div>' +
     '</div>' +
-    '<div class="insight-block amber" style="margin-bottom:16px;">' +
-      '<div class="insight-title">The reframe</div>' +
-      '<div class="insight-text">Demand funds hiring. Hiring does not create demand. A salesperson without a pipeline is a <strong>liability, not an asset.</strong></div>' +
-    '</div>' +
-    '<div class="chart-wrap" style="height:300px;"><canvas id="hiring-trap-chart"></canvas></div>' +
+    '<div class="chart-wrap" style="height:480px;margin-bottom:24px;"><canvas id="surround-chart"></canvas></div>' +
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">'+cardHtml+'</div>' +
     '</div>' +
     '<div class="viz-section">' +
-    '<div class="viz-header"><i class="ti ti-brain"></i> Full analysis</div>' +
+    '<div class="viz-header"><i class="ti ti-list-details"></i> Full swarm strategy</div>' +
     renderMarkdown(text) +
     '</div></div>';
 }
@@ -1970,7 +1845,13 @@ async function generateAll() {
   if (progressLabel) progressLabel.innerHTML = '<span style="color:#4ade80;font-weight:500;">✓ All '+outputDefs.length+' outputs ready</span>';
   setTimeout(() => { if (progressWrap) progressWrap.style.display = 'none'; }, 3000);
   if (btn) btn.disabled = false;
+  state.selectedOutput = 0;
   renderOutputPanel();
+  // Auto-show first tab content
+  setTimeout(() => {
+    const area = document.getElementById('out-content-area');
+    if (area) area.innerHTML = renderTabContent(0);
+  }, 100);
 }
 
 async function generateSingle(idx) {
