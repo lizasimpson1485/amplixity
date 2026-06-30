@@ -1299,6 +1299,16 @@ function renderInline(text) {
 }
 
 
+function renderTabContent(idx) {
+  const def = outputDefs[idx];
+  const text = state.generatedOutputs[idx];
+  if (!text) {
+    return '<div class="out-empty"><i class="ti '+def.icon+'" style="font-size:48px;color:var(--color-purple-light);opacity:0.4;display:block;margin-bottom:16px;"></i><div class="out-empty-title">'+def.title+'</div><div class="out-empty-desc">'+def.desc+'</div><button class="out-generate-single" onclick="generateSingle('+idx+')"><i class="ti ti-sparkles"></i> Generate this output</button></div>';
+  }
+  return '<div class="out-result-wrap"><div class="out-result-actions"><div class="out-result-badge"><i class="ti '+def.icon+'" style="font-size:12px;"></i> '+def.title+'</div><div style="display:flex;gap:6px;"><button class="out-action-btn" onclick="copyTab('+idx+')"><i class="ti ti-copy"></i> Copy</button><button class="out-action-btn" onclick="downloadTab('+idx+')"><i class="ti ti-download"></i> Download</button><button class="out-action-btn" onclick="viewTab('+idx+')"><i class="ti ti-external-link"></i> Full page</button></div></div><div class="out-result-text">'+renderVisualOutput(idx,text)+'</div></div>';
+}
+
+
 function renderVisualOutput(idx, text) {
   const d = state.data;
   switch(idx) {
@@ -1885,6 +1895,110 @@ function renderTextViz(text, idx) {
 
   return '<div class="viz-wrap"><div class="viz-section">'+topSection+renderMarkdown(text)+'</div></div>';
 }
+
+
+// ─── PROMPT BUILDER ──────────────────────────────────────────
+
+function buildContext() {
+  const d = state.data;
+  const srcBreakdown = Object.entries(d.sources).filter(([,v])=>v>0).map(([k,v])=>k+': '+v+'%').join(', ')||'Not specified';
+  const core4 = 'Product '+d.productScore+'/5, Audience '+d.audienceScore+'/5, Offer '+d.offerScore+'/5, Funnel '+d.funnelScore+'/5';
+  const effectiveLTV = parseFloat(d.ltv)||parseFloat(d.acv)||0;
+  const gm = parseFloat(d.grossMargin)||70;
+  const maxCAC = effectiveLTV*(gm/100)*0.33;
+  const maxCPM = maxCAC*((parseFloat(d.closeRate)||0)/100);
+  const cacCtx = d.acv ? '- Gross margin: '+gm+'% | LTV: $'+Math.round(effectiveLTV)+' | Max CAC: $'+Math.round(maxCAC)+' | Max CPM: $'+Math.round(maxCPM) : '';
+  const founderCtx = '- Goal: '+d.exitGoal+' | Horizon: '+d.timeHorizon+'yrs | '+d.investorStage+'\n- What winning looks like: '+(d.whatWinLooksLike||'Not specified')+'\n- Biggest fear: '+(d.biggestFear||'Not specified')+'\n- Vision: '+(d.founderVision||'Not specified');
+  const growthCtx = '- Years on referrals: '+(d.yearsOnReferrals||'N/A')+' | Demand gen: '+d.demandGenHeadcount+'\n- Growth ceiling: '+(d.growthCeiling||'Not specified')+'\n- Referral risk: '+(d.referralRiskAnswer||'Not specified')+'\n- Paid media history: '+(d.whyPaidFailed||'Not specified');
+  const hiringCtx = '- Current closers: '+(d.currentClosers||'N/A')+' | Monthly deal capacity: '+(d.monthlyDealCapacity||'N/A')+' | Hiring plan: '+(d.hiringPlan||'N/A')+'\n- Readiness block: '+(d.readinessBlock||'N/A')+'\n- Lost deal reason: '+(d.lostDealReason||'N/A');
+  return {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx, hiringCtx};
+}
+
+function buildPrompts(ctx) {
+  const {d, srcBreakdown, core4, cacCtx, founderCtx, growthCtx, hiringCtx} = ctx;
+  return [
+    `Generate a Pipeline Dependency Map for ${d.companyName||'the prospect'} (${d.industry}).\nPipeline: ${srcBreakdown} | ACV: $${d.acv} | Close rate: ${d.closeRate}% | Cycle: ${d.salesCycle}wks\nRevenue: ${d.currentRevenue} → target ${d.targetRevenue}\n${growthCtx}\n${founderCtx}\n\n1. PIPELINE DEPENDENCY SCORE — HIGH/MEDIUM/LOW with logic\n2. SOURCE BREAKDOWN — each source, %, risk label\n3. CONCENTRATION RISK — honest 2-paragraph narrative tied to their fears\n4. THE REFERRAL TRAP — use their own words\n5. THE PERSONAL STAKES — connect to founder vision\n6. RECOMMENDED REBALANCE — target mix at 12 months`,
+    `Generate a Message-Market-Fit Assessment for ${d.companyName||'the prospect'} (${d.industry}).\nICP: ${d.icp}\nBuyer pain (their words): ${d.painPoints}\nDifferentiator: ${d.differentiator}\nCustomer language: ${d.reviewQuotes}\nCurrent offer: ${d.currentOffer}\n\n1. MESSAGE-MARKET-FIT SCORE — 1-10 with verdict\n2. WHAT THEIR MESSAGING SAYS NOW\n3. WHAT BUYERS ACTUALLY FEEL — use their exact quotes\n4. THE GAP — specific phrases missing for cold buyers\n5. WINNING MESSAGE FRAMEWORK — rewritten cold-market value prop\n6. 3 HEADLINE CONCEPTS — ad/landing page options`,
+    `Generate an ICP & TAM Mapping for ${d.companyName||'the prospect'} (${d.industry}, ACV $${d.acv}).\nICP: ${d.icp}\nPain points: ${d.painPoints}\nRevenue: ${d.currentRevenue}\n\n1. ICP DEFINITION — firmographics, technographics, trigger events\n2. TOTAL ADDRESSABLE MARKET — named account estimate\n3. TAM QUALIFICATION CHECK — meets 5,000+ account floor?\n4. TIER 1 ACCOUNT PROFILE — the 20% worth 80% of revenue\n5. TRIGGER EVENT MAP — top 5 buying signals\n6. AUDIENCE BUILD — LinkedIn/Google/Meta recommendations`,
+    `Generate a Competitive Positioning Snapshot for ${d.companyName||'the prospect'} (${d.industry}).\nCompetitors: ${d.competitors}\nDifferentiator: ${d.differentiator}\nICP: ${d.icp} | Offer: ${d.currentOffer}\n\n1. COMPETITIVE LANDSCAPE\n2. HOW THEY SHOW UP NOW — honest assessment\n3. THE UNUSED WEDGE — positioning angle not being used\n4. CATEGORY CREATION OPPORTUNITY\n5. BATTLE CARD — 3 differentiation points for sales\n6. POSITIONING STATEMENT — 2 tight sentences`,
+    `Generate a GTM Plan for ${d.companyName||'the prospect'} (${d.industry}, ACV $${d.acv}).\nICP: ${d.icp} | Pain: ${d.painPoints} | Differentiator: ${d.differentiator}\nChannels tried: ${d.channels} | Missed opps: ${d.missedOpps}\n${growthCtx}\n\n1. PROSPECT JOURNEY MAP — awareness to decision\n2. CAMPAIGN ARCHITECTURE — top/mid/bottom funnel\n3. SAMPLE AD CONCEPTS — 3 ads (hook + body + CTA)\n4. MISSED OPPORTUNITIES — based on their growth reality\n5. THE PAID MEDIA HISTORY LESSON — reframe what went wrong\n6. QUICK WINS — 3 things in 30 days\n7. 90-DAY GTM SPRINT`,
+    `Generate a Core 4 Scorecard for ${d.companyName||'the prospect'} (${d.industry}).\n${core4}\nOffer: ${d.currentOffer} | ICP: ${d.icp} | Channels: ${d.channels}\n\n1. CORE 4 SCORECARD TABLE — score, Red/Amber/Green, diagnosis\n2. OVERALL SCALE-READINESS — average + verdict\n3. BIGGEST BLOCKER — the one score killing paid media ROI\n4. QUICK FIX ROADMAP — move each score up 1 point in 30 days\n5. WHAT GOOD LOOKS LIKE — 5/5 in their specific context`,
+    `Generate a Front-End Offer Concept for ${d.companyName||'the prospect'} (${d.industry}, ACV $${d.acv}).\nCurrent offer: ${d.currentOffer} | Desired entry offer: ${d.desiredOffer}\nICP: ${d.icp} | Pain: ${d.painPoints}\n\n1. THE PROBLEM WITH THEIR CURRENT OFFER — why it's hard to sell cold\n2. FRONT-END OFFER CONCEPT — name, price point, deliverable\n3. OFFER POSITIONING — no-brainer framing for the ICP\n4. THE BRIDGE — how it leads to full engagement\n5. SALES PAGE OUTLINE — key sections\n6. OBJECTION HANDLING — top 3 objections addressed`,
+    `Generate a Hiring Trap analysis for ${d.companyName||'the prospect'}.\n${hiringCtx}\nACV: $${d.acv} | Close rate: ${d.closeRate}% | Monthly deal capacity: ${d.monthlyDealCapacity||'unknown'}\n\n1. THE BELIEF — articulate their readiness concern empathetically\n2. THE MATH PROBLEM — show numerically why hiring before demand is risky\n3. PATH A: HIRE FIRST — cash flow impact months 1-6\n4. PATH B: DEMAND FIRST — cash flow with $5K/mo paid media\n5. THE CAPACITY REALITY — how many deals could they handle now without hiring?\n6. THE REFRAME — demand funds hiring. Hiring does not create demand.\n7. THE INVITATION — what would need to be true to start now?`,
+    `Generate a 12-Month Pipeline Forecast & ROI Model for ${d.companyName||'the prospect'}.\nACV: $${d.acv} | Close rate: ${d.closeRate}% | Sales cycle: ${d.salesCycle}wks\nRevenue: ${d.currentRevenue} → ${d.targetRevenue} | Sources: ${srcBreakdown}\n${cacCtx}\n${founderCtx}\nAssumptions: CPM = $400 base ($300-500 Amplixity benchmark).\n\n1. FORECAST INPUTS TABLE\n2. MEETINGS NEEDED — show the maths\n3. 3 SCENARIOS — Conservative/Base/Optimistic\n4. MONTHLY PIPELINE MODEL — Months 1-12\n5. PAID MEDIA BUDGET RECOMMENDATION\n6. PAYBACK PERIOD\n7. ROI MULTIPLE\n8. THE FOUNDER'S NUMBER — connect to personal goal`,
+    `Generate a 6-Stage Roadmap for ${d.companyName||'the prospect'}.\nPipeline: ${srcBreakdown} | ${core4} | Channels: ${d.channels} | Target: ${d.targetRevenue}\n${founderCtx}\n${growthCtx}\n\nFor each stage: objective, key activities, success metrics, failure modes.\nSTAGE 1: FOUNDATION (Days 1-30)\nSTAGE 2: LAUNCH (Days 31-60)\nSTAGE 3: OPTIMISE (Days 61-90)\nSTAGE 4: SCALE (Months 4-6)\nSTAGE 5: EXPAND (Months 7-9)\nSTAGE 6: OWN THE CHANNEL (Months 10-12)\nEnd with: THE OWNED CHANNEL VISION`,
+    `Generate a Swarm Method channel strategy for ${d.companyName||'the prospect'} (${d.industry}, ACV $${d.acv}).\nICP: ${d.icp} | Pain: ${d.painPoints}\nChannels tried: ${d.channels} | Missed opps: ${d.missedOpps}\n\n1. WHERE YOUR BUYERS LIVE — channels + why\n2. PRIMARY CHANNEL — rationale, budget range, expected CPL\n3. SECONDARY CHANNEL — surround strategy\n4. RETARGETING STACK\n5. CHANNELS TO AVOID (FOR NOW) — and why\n6. CONTENT TYPE BY CHANNEL — what works for $30K-$300K B2B\n7. 90-DAY CHANNEL TEST PLAN`
+  ];
+}
+
+// ─── GENERATE ────────────────────────────────────────────────
+
+const SYSTEM_PROMPT = 'You are a world-class B2B GTM strategist at Amplixity, a paid media revenue agency for B2B tech, SaaS, AI infrastructure, consulting and robotics companies with $30K-$300K deals. Produce structured, specific, actionable deliverables. Use numbered sections with ALL CAPS headers. Be direct and data-driven. Every insight must connect to the specific inputs provided. No generic advice.';
+
+async function generateAll() {
+  const btn = document.getElementById('gen-all-btn');
+  if (btn) btn.disabled = true;
+  const progressWrap = document.getElementById('gen-progress-wrap');
+  const progressBar = document.getElementById('out-progress-bar');
+  const progressLabel = document.getElementById('out-progress-label');
+  if (progressWrap) progressWrap.style.display = 'block';
+  if (progressLabel) progressLabel.innerHTML = 'Generating all outputs simultaneously...';
+  if (progressBar) progressBar.style.width = '5%';
+
+  const ctx = buildContext();
+  const prompts = buildPrompts(ctx);
+  let completed = 0;
+
+  const tasks = outputDefs.map((_, idx) => {
+    if (state.generatedOutputs[idx]) { completed++; return Promise.resolve(); }
+    return callAPI(idx, prompts[idx]).then(() => {
+      completed++;
+      const pct = Math.round((completed/outputDefs.length)*100);
+      if (progressBar) progressBar.style.width = pct+'%';
+      if (progressLabel) progressLabel.innerHTML = completed+' of '+outputDefs.length+' outputs complete...';
+      const tabs = document.querySelectorAll('.out-tab');
+      if (tabs[idx]) tabs[idx].classList.add('done');
+      if (state.selectedOutput === idx) {
+        const area = document.getElementById('out-content-area');
+        if (area) area.innerHTML = renderTabContent(idx);
+      }
+    });
+  });
+
+  await Promise.all(tasks);
+  if (progressBar) progressBar.style.width = '100%';
+  if (progressLabel) progressLabel.innerHTML = '<span style="color:#4ade80;font-weight:500;">✓ All '+outputDefs.length+' outputs ready</span>';
+  setTimeout(() => { if (progressWrap) progressWrap.style.display = 'none'; }, 3000);
+  if (btn) btn.disabled = false;
+  renderOutputPanel();
+}
+
+async function generateSingle(idx) {
+  const area = document.getElementById('out-content-area');
+  if (area) area.innerHTML = '<div class="out-empty"><div class="out-empty-title" style="color:var(--color-purple-light);">Building '+outputDefs[idx].title+'...</div></div>';
+  const ctx = buildContext();
+  const prompts = buildPrompts(ctx);
+  await callAPI(idx, prompts[idx]);
+  if (area) area.innerHTML = renderTabContent(idx);
+  const tabs = document.querySelectorAll('.out-tab');
+  if (tabs[idx]) tabs[idx].classList.add('done');
+  renderOutputPanel();
+}
+
+async function callAPI(idx, prompt) {
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1200, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: prompt }] })
+    });
+    const data = await resp.json();
+    state.generatedOutputs[idx] = data.content?.find(b=>b.type==='text')?.text || 'Error generating output.';
+  } catch(e) {
+    state.generatedOutputs[idx] = 'Connection error. Check your API key and internet connection.';
+  }
+}
+
 
 
 // ─── CLIENT SESSION SYSTEM (Database-backed) ─────────────────
