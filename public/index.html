@@ -413,31 +413,25 @@
 
 
   /* Markdown rendering */
-  .md-body { font-size: 15px; line-height: 1.8; color: var(--color-text); }
-  .md-body h1 { font-size: 20px; font-weight: 700; color: #fff; margin: 20px 0 10px; }
-  .md-body h2 { font-size: 17px; font-weight: 600; color: #fff; margin: 18px 0 8px; border-bottom: 0.5px solid var(--color-border); padding-bottom: 6px; }
-  .md-body h3 { font-size: 15px; font-weight: 600; color: var(--color-purple-light); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.05em; }
-  .md-body p { margin: 0 0 12px; }
+  .md-body { font-size: 14px; line-height: 1.75; color: var(--color-text); }
+  .md-h1 { font-size: 18px; font-weight: 700; color: #fff; margin: 20px 0 8px; font-family: var(--font-heading); }
+  .md-h2 { font-size: 16px; font-weight: 600; color: #fff; margin: 18px 0 6px; font-family: var(--font-heading); padding-bottom: 6px; border-bottom: 0.5px solid var(--color-border); }
+  .md-h3 { font-size: 13px; font-weight: 700; color: var(--color-purple-light); margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.06em; font-family: var(--font-heading); }
+  .md-p { margin: 0 0 10px; }
+  .md-gap { height: 8px; }
+  .md-hr { border: none; border-top: 0.5px solid var(--color-border); margin: 16px 0; }
   .md-body strong { color: #fff; font-weight: 600; }
   .md-body em { color: var(--color-text-muted); font-style: italic; }
-  .md-body ul { list-style: none; padding: 0; margin: 8px 0 16px; }
-  .md-body ul li { padding: 4px 0 4px 20px; position: relative; border-bottom: 0.5px solid rgba(255,255,255,0.04); }
-  .md-body ul li::before { content: "→"; position: absolute; left: 0; color: var(--color-purple-light); font-size: 12px; top: 6px; }
-  .md-body ul li.num::before { content: counter(li); counter-increment: li; background: var(--color-purple); color: #fff; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; top: 5px; }
-  .md-body table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
-  .md-body table td { padding: 8px 12px; border: 0.5px solid var(--color-border); }
-  .md-body table tr:first-child td { background: var(--color-purple-faint); font-weight: 600; color: var(--color-purple-light); }
-  .md-body table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
-  .md-body hr { border: none; border-top: 0.5px solid var(--color-border); margin: 20px 0; }
-
-
-  /* Client picker */
-  .client-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 8px; }
-  .client-card { display: flex; align-items: center; justify-content: space-between; background: var(--color-card); border: 0.5px solid var(--color-border); border-radius: var(--radius-md); padding: 14px 16px; gap: 12px; }
-  .client-card:hover { border-color: var(--color-purple); }
-  .client-name { font-size: 15px; font-weight: 500; color: #fff; margin-bottom: 3px; }
-  .client-meta { font-size: 12px; color: var(--color-text-muted); }
-
+  .md-body code { background: rgba(124,58,237,0.15); color: var(--color-purple-light); padding: 1px 6px; border-radius: 4px; font-size: 13px; }
+  .md-list { list-style: none; padding: 0; margin: 4px 0 12px; }
+  .md-list li { padding: 5px 0 5px 18px; position: relative; border-bottom: 0.5px solid rgba(255,255,255,0.03); font-size: 14px; }
+  .md-list li::before { content: "→"; position: absolute; left: 0; color: var(--color-purple-light); font-size: 11px; top: 7px; }
+  .md-numbered li::before { content: counter(md-li); counter-increment: md-li; background: var(--color-purple); color: #fff; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; top: 6px; }
+  .md-numbered { counter-reset: md-li; }
+  .md-table { width: 100%; border-collapse: collapse; margin: 12px 0 16px; font-size: 13px; }
+  .md-table th { background: var(--color-purple-faint); color: var(--color-purple-light); font-weight: 600; padding: 8px 12px; text-align: left; border-bottom: 1px solid rgba(124,58,237,0.3); font-size: 12px; }
+  .md-table td { padding: 8px 12px; border-bottom: 0.5px solid rgba(255,255,255,0.04); vertical-align: top; }
+  .md-table tr:hover td { background: rgba(255,255,255,0.02); }
 
   /* ── Visual Output Components ── */
   .viz-wrap { padding: 0 0 32px; }
@@ -1230,63 +1224,80 @@ function renderOutputPanel() {
 
 function renderMarkdown(text) {
   if (!text) return '';
-  let html = text
-    // Escape HTML first
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    // Tables
-    .replace(/^\|(.+)\|$/gm, (line) => {
-      const cells = line.split('|').filter((_,i,a) => i>0 && i<a.length-1);
-      return '<tr>' + cells.map(c => c.trim().match(/^[-:]+$/) ? '' : '<td>'+c.trim()+'</td>').join('') + '</tr>';
-    })
-    // Wrap consecutive <tr> blocks in table
-    .replace(/((<tr>.*<\/tr>\n?)+)/g, '<table>$1</table>')
-    // Remove empty rows (separator rows)
-    .replace(/<tr><\/tr>/g,'')
-    // Headers
-    .replace(/^### (.+)$/gm,'<h3>$1</h3>')
-    .replace(/^## (.+)$/gm,'<h2>$1</h2>')
-    .replace(/^# (.+)$/gm,'<h1>$1</h1>')
-    // Bold
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    // Italic
-    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+  const lines = text.split('\n');
+  let html = '';
+  let inTable = false;
+  let tableHtml = '';
+  let tableHeaderDone = false;
+  let inList = false;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Table detection
+    if (line.trim().startsWith('|')) {
+      const cells = line.split('|').filter((_,i,a) => i>0 && i<a.length-1).map(c => c.trim());
+      const isSeparator = cells.every(c => /^[-:]+$/.test(c));
+      if (isSeparator) { tableHeaderDone = true; continue; }
+      if (!inTable) { inTable = true; tableHtml = '<table class="md-table">'; tableHeaderDone = false; }
+      const tag = (!tableHeaderDone && i < lines.length-1 && lines[i+1] && lines[i+1].includes('---')) ? 'th' : (tableHeaderDone ? 'td' : 'th');
+      tableHtml += '<tr>' + cells.map(c => '<'+tag+'>'+renderInline(c)+'</'+tag+'>').join('') + '</tr>';
+      continue;
+    } else if (inTable) {
+      html += tableHtml + '</table>';
+      inTable = false; tableHtml = ''; tableHeaderDone = false;
+    }
+
+    // Close list
+    if (inList && !line.match(/^[-*•]\s|^\d+\.\s/)) {
+      html += '</ul>'; inList = false;
+    }
+
+    // Headings
+    if (line.startsWith('### ')) { html += '<h3 class="md-h3">' + renderInline(line.slice(4)) + '</h3>'; continue; }
+    if (line.startsWith('## ')) { html += '<h2 class="md-h2">' + renderInline(line.slice(3)) + '</h2>'; continue; }
+    if (line.startsWith('# ')) { html += '<h1 class="md-h1">' + renderInline(line.slice(2)) + '</h1>'; continue; }
+    // Numbered headings like "1. TITLE" or "2. SECTION NAME"
+    if (line.match(/^\d+\.\s+[A-Z][A-Z\s&—–-]+$/)) { html += '<h3 class="md-h3">' + renderInline(line) + '</h3>'; continue; }
+
     // Horizontal rule
-    .replace(/^---$/gm,'<hr>')
-    // Numbered lists
-    .replace(/^(\d+)\. (.+)$/gm,'<li class="num">$2</li>')
-    // Bullet lists
-    .replace(/^[•\-\*] (.+)$/gm,'<li>$1</li>')
-    // Wrap list items
-    .replace(/(<li[^>]*>.*<\/li>\n?)+/g, m => '<ul>'+m+'</ul>')
-    // Paragraphs - double newline
-    .replace(/\n\n/g,'</p><p>')
-    // Single newlines
-    .replace(/\n/g,'<br>')
-    // Wrap in paragraph
-    ;
-  return '<div class="md-body"><p>' + html + '</p></div>';
+    if (line.match(/^[-=]{3,}$/)) { html += '<hr class="md-hr">'; continue; }
+
+    // Bullet list
+    if (line.match(/^[-*•]\s/)) {
+      if (!inList) { html += '<ul class="md-list">'; inList = true; }
+      html += '<li>' + renderInline(line.replace(/^[-*•]\s/, '')) + '</li>';
+      continue;
+    }
+
+    // Numbered list
+    if (line.match(/^\d+\.\s/)) {
+      if (!inList) { html += '<ul class="md-list md-numbered">'; inList = true; }
+      html += '<li>' + renderInline(line.replace(/^\d+\.\s/, '')) + '</li>';
+      continue;
+    }
+
+    // Empty line
+    if (line.trim() === '') { html += '<div class="md-gap"></div>'; continue; }
+
+    // Regular paragraph
+    html += '<p class="md-p">' + renderInline(line) + '</p>';
+  }
+
+  if (inTable) html += tableHtml + '</table>';
+  if (inList) html += '</ul>';
+
+  return '<div class="md-body">' + html + '</div>';
 }
 
+function renderInline(text) {
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>');
+}
 
-function scoreColor(score) {
-  if (score >= 4) return '#22c55e';
-  if (score >= 3) return '#f59e0b';
-  return '#ef4444';
-}
-function scoreLabel(score) {
-  if (score >= 4) return 'green';
-  if (score >= 3) return 'amber';
-  return 'red';
-}
-function riskColor(pct) {
-  if (pct >= 60) return '#ef4444';
-  if (pct >= 40) return '#f59e0b';
-  return '#22c55e';
-}
-function barColor(i) {
-  const cols = ['#7c3aed','#8ab0e8','#b06ef3','#22c55e','#f59e0b','#ef4444','#a78bfa'];
-  return cols[i % cols.length];
-}
 
 function renderVisualOutput(idx, text) {
   const d = state.data;
@@ -1442,106 +1453,119 @@ function renderScorecardViz(d, text) {
 function renderForecastViz(d, text) {
   const acv = parseFloat(d.acv)||75000;
   const cr = parseFloat(d.closeRate)||25;
-  const months = [1,2,3,4,5,6,7,8,9,10,11,12];
-  // Ramp: starts slow, accelerates
-  const meetingsPerMonth = [2,3,4,5,6,7,8,9,10,11,12,13];
+  const meetingsPerMonth = [2,3,5,6,7,8,9,10,11,12,13,14];
   const cpm = 400;
-  const dealsPerMonth = meetingsPerMonth.map(m => (m * (cr/100)).toFixed(1));
-  const revenuePerMonth = dealsPerMonth.map(d => Math.round(parseFloat(d) * acv));
-  const cumRevenue = revenuePerMonth.reduce((acc,v,i) => { acc.push((acc[i-1]||0)+v); return acc; }, []);
+  const dealsPerMonth = meetingsPerMonth.map(m => parseFloat((m*(cr/100)).toFixed(1)));
+  const revenuePerMonth = dealsPerMonth.map(d => Math.round(d*acv));
+  const cumRevenue = revenuePerMonth.reduce((acc,v,i) => { acc.push((acc[i-1]||0)+v); return acc; },[]);
+  const spendPerMonth = meetingsPerMonth.map(m => m*cpm);
+  const cumSpend = spendPerMonth.reduce((acc,v,i) => { acc.push((acc[i-1]||0)+v); return acc; },[]);
+  const totalRev = cumRevenue[11];
+  const totalSpend = cumSpend[11];
+  const roi = Math.round((totalRev-totalSpend)/totalSpend*100);
+  const totalMeetings = meetingsPerMonth.reduce((a,b)=>a+b,0);
+  const paybackMonth = cumRevenue.findIndex((r,i) => r > cumSpend[i]) + 1;
 
-  function tryRenderForecast(attempts) {
+  function tryChart(attempts) {
     const ctx = document.getElementById('forecast-chart');
-    if (!ctx || !window.Chart) { if (attempts < 20) setTimeout(() => tryRenderForecast(attempts+1), 100); return; }
+    if (!ctx||!window.Chart) { if(attempts<20) setTimeout(()=>tryChart(attempts+1),100); return; }
     new Chart(ctx, {
       type: 'bar',
       data: {
         labels: ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],
         datasets: [
-          { label: 'Monthly Revenue', data: revenuePerMonth, backgroundColor: 'rgba(124,58,237,0.7)', borderRadius: 4 },
-          { label: 'Cumulative Revenue', data: cumRevenue, type: 'line', borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)', tension: 0.4, fill: true, pointBackgroundColor: '#4ade80', yAxisID: 'y1' }
+          { label: 'Monthly Revenue', data: revenuePerMonth, backgroundColor: 'rgba(124,58,237,0.8)', borderRadius: 5, order: 2 },
+          { label: 'Cumulative Revenue', data: cumRevenue, type: 'line', borderColor: '#4ade80', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, pointBackgroundColor: '#4ade80', yAxisID: 'y1', order: 1 },
+          { label: 'Cumulative Spend', data: cumSpend, type: 'line', borderColor: '#f59e0b', backgroundColor: 'transparent', tension: 0.4, pointRadius: 3, pointBackgroundColor: '#f59e0b', borderDash: [4,4], yAxisID: 'y1', order: 0 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } } },
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 11 }, padding: 12 } } },
         scales: {
-          x: { ticks: { color: '#8a8aaa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { ticks: { color: '#8a8aaa', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y1: { position: 'right', ticks: { color: '#4ade80', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { display: false } }
+          x: { ticks: { color: '#8a8aaa', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8a8aaa', font: { size: 11 }, callback: v => '$'+Math.round(v/1000)+'K' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y1: { position: 'right', ticks: { color: '#4ade80', font: { size: 11 }, callback: v => '$'+Math.round(v/1000)+'K' }, grid: { display: false } }
         }
       }
     });
   }
-  setTimeout(() => tryRenderForecast(0), 50);
+  setTimeout(()=>tryChart(0),80);
 
-  const totalRev = cumRevenue[11];
-  const totalMeetings = meetingsPerMonth.reduce((a,b)=>a+b,0);
-  const totalSpend = totalMeetings * cpm;
-  const roi = ((totalRev - totalSpend) / totalSpend * 100).toFixed(0);
-
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-trending-up"></i> 12-month revenue forecast</div>
-      <div class="stat-grid" style="margin-bottom:20px;">
-        <div class="stat-card green">
-          <div class="stat-val">$${Math.round(totalRev/1000)}K</div>
-          <div class="stat-label">Projected 12-month revenue</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">${totalMeetings}</div>
-          <div class="stat-label">Meetings needed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">$${Math.round(totalSpend/1000)}K</div>
-          <div class="stat-label">Estimated ad spend</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-val">${roi}%</div>
-          <div class="stat-label">Projected ROI</div>
-        </div>
-      </div>
-      <div class="chart-wrap" style="height:260px;">
-        <canvas id="forecast-chart"></canvas>
-      </div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-calculator"></i> Full model & assumptions</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
+  return '<div class="viz-wrap">' +
+    '<div class="viz-section">' +
+    '<div class="stat-grid" style="margin-bottom:16px;">' +
+      '<div class="stat-card green"><div class="stat-val">$'+Math.round(totalRev/1000)+'K</div><div class="stat-label">12-month projected revenue</div></div>' +
+      '<div class="stat-card"><div class="stat-val">'+totalMeetings+'</div><div class="stat-label">Total meetings needed</div></div>' +
+      '<div class="stat-card"><div class="stat-val">$'+Math.round(totalSpend/1000)+'K</div><div class="stat-label">Total ad spend</div></div>' +
+      '<div class="stat-card green"><div class="stat-val">'+roi+'%</div><div class="stat-label">Projected ROI</div></div>' +
+      '<div class="stat-card amber"><div class="stat-val">M'+paybackMonth+'</div><div class="stat-label">Payback month</div></div>' +
+      '<div class="stat-card"><div class="stat-val">$'+cpm+'</div><div class="stat-label">Cost per meeting (benchmark)</div></div>' +
+    '</div>' +
+    '<div class="chart-wrap" style="height:300px;"><canvas id="forecast-chart"></canvas></div>' +
+    '</div>' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-calculator"></i> Full model & assumptions</div>' +
+    renderMarkdown(text) +
+    '</div></div>';
 }
+
 
 function renderRoadmapViz(d, text) {
   const stages = [
     { num:'01', title:'Foundation', period:'Days 1–30', color:'#7c3aed', items:['ICP definition locked','Tracking & pixels installed','Landing page live','Ad creative briefed'] },
     { num:'02', title:'Launch', period:'Days 31–60', color:'#8ab0e8', items:['First campaigns live','LinkedIn + Meta running','Retargeting activated','First meetings booked'] },
     { num:'03', title:'Optimise', period:'Days 61–90', color:'#b06ef3', items:['CPL benchmarked','Winning ads scaled','Losing ads killed','Message refined'] },
-    { num:'04', title:'Scale', period:'Months 4–6', color:'#22c55e', items:['Budget increased 2x','New audience segments','SDR sequence added','Pipeline predictable'] },
-    { num:'05', title:'Expand', period:'Months 7–9', color:'#f59e0b', items:['New channels tested','Content engine live','Referrals become bonus','CAC stable'] },
-    { num:'06', title:'Own the Channel', period:'Months 10–12', color:'#4ade80', items:['Owned demand channel','Brand in market','Referrals = upside only','Ready to scale budget'] }
+    { num:'04', title:'Scale', period:'Months 4–6', color:'#22c55e', items:['Budget increased 2x','New audience segments','Pipeline predictable','CAC stabilising'] },
+    { num:'05', title:'Expand', period:'Months 7–9', color:'#f59e0b', items:['New channels tested','Content engine live','Referrals become bonus','Brand in market'] },
+    { num:'06', title:'Own it', period:'Months 10–12', color:'#4ade80', items:['Owned demand channel','Hire funded by revenue','Referrals = upside only','Ready to scale budget'] }
   ];
 
-  const stagesHtml = stages.map(s => `
-    <div class="stage-card" style="border-top:2px solid ${s.color};">
-      <div class="stage-num" style="color:${s.color};">Stage ${s.num}</div>
-      <div class="stage-title">${s.title}</div>
-      <div class="stage-period">${s.period}</div>
-      <div class="stage-items">${s.items.map(i=>`<div class="stage-item">${i}</div>`).join('')}</div>
-    </div>
-  `).join('');
+  function tryChart(attempts) {
+    const ctx = document.getElementById('roadmap-chart');
+    if (!ctx||!window.Chart) { if(attempts<20) setTimeout(()=>tryChart(attempts+1),100); return; }
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],
+        datasets: [
+          { label: 'Pipeline momentum', data: [5,10,20,35,50,65,75,82,88,92,96,100], borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.1)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#b06ef3' },
+          { label: 'Referral dependency', data: [100,95,85,75,65,55,45,38,32,25,18,10], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.05)', tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: '#f87171', borderDash: [5,3] }
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 11 } } }, tooltip: { callbacks: { label: c => c.dataset.label+': '+c.parsed.y+'%' } } },
+        scales: {
+          x: { ticks: { color: '#8a8aaa', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+          y: { ticks: { color: '#8a8aaa', font: { size: 11 }, callback: v => v+'%' }, grid: { color: 'rgba(255,255,255,0.04)' }, min: 0, max: 100 }
+        }
+      }
+    });
+  }
+  setTimeout(()=>tryChart(0),80);
 
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-map-2"></i> Your momentum map</div>
-      <div class="roadmap-stages">${stagesHtml}</div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-flag"></i> Full roadmap detail</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
+  const stagesHtml = stages.map(s =>
+    '<div class="stage-card" style="border-top:3px solid '+s.color+';">' +
+    '<div class="stage-num" style="color:'+s.color+';">Stage '+s.num+'</div>' +
+    '<div class="stage-title">'+s.title+'</div>' +
+    '<div class="stage-period">'+s.period+'</div>' +
+    '<div class="stage-items">'+s.items.map(i=>'<div class="stage-item">'+i+'</div>').join('')+'</div>' +
+    '</div>'
+  ).join('');
+
+  return '<div class="viz-wrap">' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-trending-up"></i> Pipeline momentum vs referral dependency</div>' +
+    '<div class="chart-wrap" style="height:240px;margin-bottom:20px;"><canvas id="roadmap-chart"></canvas></div>' +
+    '<div class="roadmap-stages">'+stagesHtml+'</div>' +
+    '</div>' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-flag"></i> Full roadmap detail</div>' +
+    renderMarkdown(text) +
+    '</div></div>';
 }
+
 
 function renderChannelViz(d, text) {
   // Channel awareness funnel data
@@ -1673,121 +1697,67 @@ function renderChannelVizOLD(d, text) {
 }
 
 function renderHiringTrapViz(d, text) {
-  const acv = parseFloat(d.acv) || 75000;
-  const cr = parseFloat(d.closeRate) || 25;
-  const capacity = parseInt(d.monthlyDealCapacity) || 4;
+  const acv = parseFloat(d.acv)||75000;
+  const cr = parseFloat(d.closeRate)||25;
+  const capacity = parseInt(d.monthlyDealCapacity)||4;
   const cpm = 400;
   const mediaBudget = 5000;
-  const meetingsPerMonth = Math.round(mediaBudget / cpm);
-  const dealsPerMonth = (meetingsPerMonth * (cr/100));
-  const revenuePerMonth = dealsPerMonth * acv;
-  const salesSalary = 100000 / 12; // $100K/yr salesperson
+  const meetingsPerMonth = Math.round(mediaBudget/cpm);
+  const dealsPerMonth = meetingsPerMonth*(cr/100);
+  const revenuePerMonth = dealsPerMonth*acv;
+  const salesSalary = 100000/12;
+  const unusedCapacity = Math.max(0, Math.round(((capacity-Math.ceil(dealsPerMonth))/capacity)*100));
 
-  // Path A: Hire first (months 1-6)
-  const pathA = [
-    { month: 'M1', cash: -salesSalary, label: 'Hiring costs' },
-    { month: 'M2', cash: -salesSalary, label: 'Salary, no pipeline' },
-    { month: 'M3', cash: -salesSalary * 0.7, label: 'First meetings' },
-    { month: 'M4', cash: -salesSalary * 0.3, label: 'Pipeline building' },
-    { month: 'M5', cash: revenuePerMonth * 0.5 - salesSalary, label: 'First deals' },
-    { month: 'M6', cash: revenuePerMonth - salesSalary, label: 'Break even' }
-  ];
+  // Path A: Hire first (cumulative cash flow)
+  const cumA = [-salesSalary, -salesSalary*2, -salesSalary*2.7, -salesSalary*2.2, -salesSalary*1.2, revenuePerMonth*0.3].map(Math.round);
+  // Path B: Demand first (cumulative cash flow)
+  const cumB = [-mediaBudget, revenuePerMonth*0.2-mediaBudget*2, revenuePerMonth*0.6-mediaBudget*3, revenuePerMonth*1.1-mediaBudget*4, revenuePerMonth*1.8-mediaBudget*5, revenuePerMonth*2.5-mediaBudget*6].map(Math.round);
 
-  // Path B: Demand first (months 1-6)
-  const pathB = [
-    { month: 'M1', cash: -mediaBudget, label: 'Ads live' },
-    { month: 'M2', cash: revenuePerMonth * 0.3 - mediaBudget, label: 'First meetings' },
-    { month: 'M3', cash: revenuePerMonth * 0.7 - mediaBudget, label: 'First deals' },
-    { month: 'M4', cash: revenuePerMonth - mediaBudget, label: 'Profitable' },
-    { month: 'M5', cash: revenuePerMonth * 1.3 - mediaBudget, label: 'Scaling' },
-    { month: 'M6', cash: revenuePerMonth * 1.5 - mediaBudget, label: 'Hire with revenue' }
-  ];
-
-  const cumA = pathA.reduce((acc, v, i) => { acc.push((acc[i-1]||0) + v.cash); return acc; }, []);
-  const cumB = pathB.reduce((acc, v, i) => { acc.push((acc[i-1]||0) + v.cash); return acc; }, []);
-
-  const totalCostA = Math.abs(Math.min(...cumA));
+  const totalRiskA = Math.abs(Math.min(...cumA));
   const totalGainB = cumB[5];
-  const unusedCapacity = Math.round(((capacity - Math.ceil(dealsPerMonth)) / capacity) * 100);
 
-  function tryRenderHiring(attempts) {
+  function tryChart(attempts) {
     const ctx = document.getElementById('hiring-trap-chart');
-    if (!ctx || !window.Chart) { if (attempts < 20) setTimeout(() => tryRenderHiring(attempts+1), 100); return; }
+    if (!ctx||!window.Chart) { if(attempts<20) setTimeout(()=>tryChart(attempts+1),100); return; }
     new Chart(ctx, {
       type: 'line',
       data: {
         labels: ['M1','M2','M3','M4','M5','M6'],
         datasets: [
-          {
-            label: 'Path A: Hire first',
-            data: cumA,
-            borderColor: '#ef4444',
-            backgroundColor: 'rgba(239,68,68,0.1)',
-            tension: 0.4, fill: true,
-            pointBackgroundColor: '#ef4444', pointRadius: 5
-          },
-          {
-            label: 'Path B: Demand first',
-            data: cumB,
-            borderColor: '#4ade80',
-            backgroundColor: 'rgba(74,222,128,0.1)',
-            tension: 0.4, fill: true,
-            pointBackgroundColor: '#4ade80', pointRadius: 5
-          }
+          { label: 'Path A: Hire first', data: cumA, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#ef4444', borderWidth: 2 },
+          { label: 'Path B: Demand first', data: cumB, borderColor: '#4ade80', backgroundColor: 'rgba(74,222,128,0.1)', tension: 0.4, fill: true, pointRadius: 5, pointBackgroundColor: '#4ade80', borderWidth: 2 }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: {
-          legend: { labels: { color: '#f0f0f5', font: { size: 12 } } },
-          tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': $' + Math.round(ctx.raw).toLocaleString() } }
-        },
+        plugins: { legend: { labels: { color: '#f0f0f5', font: { size: 12 } } }, tooltip: { callbacks: { label: c => c.dataset.label+': $'+Math.round(c.parsed.y).toLocaleString() } } },
         scales: {
           x: { ticks: { color: '#8a8aaa' }, grid: { color: 'rgba(255,255,255,0.04)' } },
-          y: { ticks: { color: '#8a8aaa', callback: v => '$' + Math.round(v/1000) + 'K' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          y: { ticks: { color: '#8a8aaa', callback: v => '$'+Math.round(v/1000)+'K' }, grid: { color: 'rgba(255,255,255,0.04)' } }
         }
       }
     });
   }
-  setTimeout(() => tryRenderHiring(0), 50);
+  setTimeout(()=>tryChart(0),80);
 
-  return `<div class="viz-wrap">
-    <div class="viz-section">
-      <div class="viz-header" style="color:#fbbf24;"><i class="ti ti-alert-triangle"></i> The hiring trap — two paths, same goal</div>
-      <div class="stat-grid" style="margin-bottom:20px;">
-        <div class="stat-card red">
-          <div class="stat-val">$${Math.round(totalCostA/1000)}K</div>
-          <div class="stat-label">Cash risk: hire first path</div>
-          <div class="stat-badge high">HIGH RISK</div>
-        </div>
-        <div class="stat-card green">
-          <div class="stat-val">$${Math.round(totalGainB/1000)}K</div>
-          <div class="stat-label">Net gain: demand first path</div>
-          <div class="stat-badge good">LOWER RISK</div>
-        </div>
-        <div class="stat-card amber">
-          <div class="stat-val">${unusedCapacity}%</div>
-          <div class="stat-label">Your unused deal capacity right now</div>
-          <div class="stat-badge medium">IDLE</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-val">$${Math.round(mediaBudget/1000)}K</div>
-          <div class="stat-label">Monthly media spend vs $${Math.round(salesSalary/1000)}K salary</div>
-        </div>
-      </div>
-      <div class="insight-block amber" style="margin-bottom:16px;">
-        <div class="insight-title">The reframe</div>
-        <div class="insight-text">Demand funds hiring. Hiring doesn't create demand. A salesperson without a pipeline is a <strong>liability</strong>, not an asset. The question isn't "are we ready for leads?" — it's "can we afford to keep waiting?"</div>
-      </div>
-      <div class="chart-wrap" style="height:280px;">
-        <canvas id="hiring-trap-chart"></canvas>
-      </div>
-    </div>
-    <div class="viz-section">
-      <div class="viz-header"><i class="ti ti-brain"></i> Full analysis</div>
-      ${renderMarkdown(text)}
-    </div>
-  </div>`;
+  return '<div class="viz-wrap">' +
+    '<div class="viz-section">' +
+    '<div class="stat-grid" style="margin-bottom:16px;">' +
+      '<div class="stat-card red"><div class="stat-val">$'+Math.round(totalRiskA/1000)+'K</div><div class="stat-label">Cash at risk: hire first path</div><div class="stat-badge high">HIGH RISK</div></div>' +
+      '<div class="stat-card green"><div class="stat-val">$'+Math.round(totalGainB/1000)+'K</div><div class="stat-label">Net gain: demand first path</div><div class="stat-badge good">LOWER RISK</div></div>' +
+      '<div class="stat-card amber"><div class="stat-val">'+unusedCapacity+'%</div><div class="stat-label">Unused deal capacity right now</div></div>' +
+      '<div class="stat-card"><div class="stat-val">$'+Math.round(mediaBudget/1000)+'K</div><div class="stat-label">Monthly media vs $'+Math.round(salesSalary/1000)+'K salary</div></div>' +
+    '</div>' +
+    '<div class="insight-block amber" style="margin-bottom:16px;">' +
+      '<div class="insight-title">The reframe</div>' +
+      '<div class="insight-text">Demand funds hiring. Hiring does not create demand. A salesperson without a pipeline is a <strong>liability, not an asset.</strong></div>' +
+    '</div>' +
+    '<div class="chart-wrap" style="height:300px;"><canvas id="hiring-trap-chart"></canvas></div>' +
+    '</div>' +
+    '<div class="viz-section">' +
+    '<div class="viz-header"><i class="ti ti-brain"></i> Full analysis</div>' +
+    renderMarkdown(text) +
+    '</div></div>';
 }
 
 
