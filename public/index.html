@@ -621,6 +621,9 @@ const steps = [
     icon: 'ti-building',
     desc: 'Core business details for your GTM analysis',
     render: () => `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button onclick="loadSampleData()" style="background:rgba(124,58,237,0.15);border:0.5px solid rgba(124,58,237,0.4);color:var(--color-purple-light);padding:7px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-heading);display:flex;align-items:center;gap:6px;"><i class="ti ti-flask"></i> Use sample data</button>
+      </div>
       <div class="grid2">
         <div class="field"><label>Company name</label><input type="text" id="f-companyName" value="${esc(state.data.companyName)}" placeholder="Acme Corp" /></div>
         <div class="field"><label>Website</label><input type="text" id="f-website" value="${esc(state.data.website)}" placeholder="acme.com" /></div>
@@ -1095,6 +1098,44 @@ function recalcCapacity() {
 }
 
 
+function loadSampleData() {
+  state.data = {
+    companyName: 'Nexus AI', website: 'nexusai.io', industry: 'AI Infrastructure',
+    founded: '2021', teamSize: '18', currentRevenue: '$1.2M', targetRevenue: '$4M',
+    acv: '85000', closeRate: '22', salesCycle: '10',
+    grossMargin: '72', ltv: '170000', cacBudget: '8000',
+    sources: { referral: 65, partnerships: 20, inbound: 15, outbound: 0, events: 0, paid: 0, other: 0 },
+    whatWinLooksLike: 'Step back from sales completely, raise Series A or exit at 8x revenue',
+    exitGoal: 'exit', timeHorizon: '3', investorStage: 'seed', boardPressure: 'soft',
+    personalIncome: '$300K', biggestFear: 'Stuck at $1M ARR for 2 more years because we never cracked outbound',
+    founderVision: 'Go-to AI infrastructure partner for Series A-C SaaS companies in North America',
+    referralRiskAnswer: 'Pipeline would dry up within 60 days. No other consistent source of qualified leads.',
+    growthCeiling: 'No repeatable way to fill top of funnel. Founders are still doing all the selling.',
+    salesCallQuality: '85', yearsOnReferrals: 'since-founding', demandGenHeadcount: '0',
+    lastTimeNewChannel: 'never', whyPaidFailed: 'Never tried it — assumed it was too expensive and B2C focused',
+    coldWarmSplit: 'Maybe 15 warm contacts. Beyond that almost zero reach into cold ICP.',
+    readinessBlock: 'Want to hire a sales rep first and fix onboarding before spending on ads',
+    currentClosers: '1', monthlyDealCapacity: '4', hiringPlan: '3months',
+    lostDealReason: 'No — we have never had too many leads. Problem is always not enough coming in.',
+    icp: 'Series A-C B2B SaaS, 30-200 employees, CTO or VP Engineering, frustrated with fragile self-built AI infrastructure, triggered by failed model deployment or board pressure',
+    painPoints: "Our AI models keep breaking in production, We built it ourselves and now nobody can maintain it, Board wants AI features shipped but infra can't handle it",
+    competitors: 'Hugging Face, AWS SageMaker, in-house engineering teams',
+    differentiator: 'We handle the entire infrastructure layer so engineers focus on models not plumbing. Only provider with 99.9% uptime SLA for model serving.',
+    reviewQuotes: 'Before Nexus we had 3 engineers just keeping the lights on. Now they are building features. It paid for itself in month one.',
+    productScore: 4, audienceScore: 3, offerScore: 2, funnelScore: 2,
+    currentOffer: '12-month infrastructure contract, $85K/yr, includes dedicated model serving, monitoring and support',
+    desiredOffer: 'AI Infrastructure Audit, $2,500 — 2-week assessment with a prioritised fix list',
+    channels: 'LinkedIn outreach (low reply rate), referrals only, one conference',
+    missedOpps: 'Never captured search demand, no retargeting, no content showing up when buyers Google their problems'
+  };
+  state.step = 0;
+  renderStep();
+  // Show confirmation
+  const btn = document.querySelector('[onclick="loadSampleData()"]');
+  if (btn) { btn.innerHTML = '<i class="ti ti-check"></i> Sample data loaded'; btn.style.color = '#4ade80'; btn.style.borderColor = 'rgba(74,222,128,0.4)'; }
+}
+
+
 function renderStep() {
   const s = steps[state.step];
   document.getElementById('steps-container').innerHTML = `
@@ -1268,26 +1309,48 @@ function renderPipelineViz(d, text) {
   const riskClass = topPct >= 60 ? 'red' : topPct >= 40 ? 'amber' : 'low';
   const diversityLabel = sources.length <= 2 ? 'Fragile' : sources.length <= 3 ? 'Moderate' : 'Diverse';
   const diversityClass = sources.length <= 2 ? 'red' : sources.length <= 3 ? 'amber' : 'green';
+  const COLS = ['#7c3aed','#8ab0e8','#22c55e','#f59e0b','#ef4444','#b06ef3','#4ade80'];
 
-  const barsHtml = sources.map(([k,v],i) => 
+  // Render donut chart
+  function tryRenderPipelineChart(attempts) {
+    const ctx = document.getElementById('pipeline-donut');
+    if (!ctx || !window.Chart) { if (attempts < 20) setTimeout(() => tryRenderPipelineChart(attempts+1), 100); return; }
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: sources.map(([k]) => k.charAt(0).toUpperCase()+k.slice(1)),
+        datasets: [{ data: sources.map(([,v]) => v), backgroundColor: COLS.slice(0,sources.length), borderWidth: 0, hoverOffset: 6 }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '70%',
+        plugins: {
+          legend: { position: 'right', labels: { color: '#f0f0f5', font: { size: 12 }, padding: 12 } },
+          tooltip: { callbacks: { label: c => c.label + ': ' + c.parsed + '%' } }
+        }
+      }
+    });
+  }
+  setTimeout(() => tryRenderPipelineChart(0), 80);
+
+  // Animate bars
+  function animateBars(attempts) {
+    const first = document.getElementById('pbar-0');
+    if (!first && attempts < 20) { setTimeout(() => animateBars(attempts+1), 80); return; }
+    sources.forEach(([,v],i) => { const el = document.getElementById('pbar-'+i); if (el) el.style.width = v+'%'; });
+  }
+  setTimeout(() => animateBars(0), 80);
+
+  const barsHtml = sources.map(([k,v],i) =>
     '<div class="pipeline-bar-row">' +
     '<div class="pipeline-bar-label">' + k.charAt(0).toUpperCase()+k.slice(1) + '</div>' +
-    '<div class="pipeline-bar-track"><div class="pipeline-bar-fill" id="pbar-'+i+'" style="width:0%;background:'+riskColor(v)+';">' +
-    (v >= 15 ? k.charAt(0).toUpperCase()+k.slice(1) : '') + '</div></div>' +
+    '<div class="pipeline-bar-track"><div class="pipeline-bar-fill" id="pbar-'+i+'" style="width:0%;background:'+COLS[i]+';">' +
+    (v >= 15 ? v+'%' : '') + '</div></div>' +
     '<div class="pipeline-bar-pct">' + v + '%</div>' +
     '</div>'
   ).join('');
 
-  function animatePipeline(attempts) {
-    const first = document.getElementById('pbar-0');
-    if (!first && attempts < 20) { setTimeout(() => animatePipeline(attempts+1), 80); return; }
-    sources.forEach(([,v],i) => { const el = document.getElementById('pbar-'+i); if (el) el.style.width = v+'%'; });
-  }
-  setTimeout(() => animatePipeline(0), 50);
-
   return '<div class="viz-wrap">' +
     '<div class="viz-section">' +
-    '<div class="viz-header"><i class="ti ti-chart-pie"></i> Pipeline source breakdown</div>' +
     '<div class="stat-grid" style="margin-bottom:20px;">' +
       '<div class="stat-card ' + riskClass + '">' +
         '<div class="stat-val">' + topPct + '%</div>' +
@@ -1300,16 +1363,22 @@ function renderPipelineViz(d, text) {
       '</div>' +
       '<div class="stat-card ' + diversityClass + '">' +
         '<div class="stat-val">' + diversityLabel + '</div>' +
-        '<div class="stat-label">Source diversity rating</div>' +
+        '<div class="stat-label">Source diversity</div>' +
+      '</div>' +
+      '<div class="stat-card ' + riskClass + '">' +
+        '<div class="stat-val">' + (100 - topPct) + '%</div>' +
+        '<div class="stat-label">Pipeline outside top source</div>' +
       '</div>' +
     '</div>' +
-    '<div class="pipeline-bars">' + barsHtml + '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;">' +
+      '<div class="chart-wrap" style="height:240px;"><canvas id="pipeline-donut"></canvas></div>' +
+      '<div style="display:flex;flex-direction:column;justify-content:center;">' + barsHtml + '</div>' +
+    '</div>' +
     '</div>' +
     '<div class="viz-section">' +
     '<div class="viz-header"><i class="ti ti-alert-triangle"></i> Analysis</div>' +
     renderMarkdown(text) +
-    '</div>' +
-    '</div>';
+    '</div></div>';
 }
 
 
