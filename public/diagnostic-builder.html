@@ -189,6 +189,9 @@
           </div>
         </div>
         <div id="intake-status" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+        <div style="margin-top:10px;border-top:0.5px solid var(--border);padding-top:10px;">
+          <button class="btn-load" onclick="loadSampleIntake()" style="background:rgba(124,58,237,0.1);border-color:rgba(124,58,237,0.3);"><i class="ti ti-flask" style="font-size:12px;"></i> Load Trinity Sterile sample data</button>
+        </div>
       </div>
 
       <!-- TAM inputs -->
@@ -670,6 +673,76 @@ function exportReport() {
   const blob = new Blob([full],{type:'text/plain'});
   const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'-pipeline-diagnostic.txt'; a.click(); URL.revokeObjectURL(a.href);
 }
+
+function loadSampleIntake() {
+  state.intakeData = {
+    companyName: 'Trinity Sterile, Inc.', industry: 'Medical devices — sterile processing',
+    headquarters: 'Salisbury, MD', founded: '1954', employees: '210', revenue: '$42M',
+    currentRevenueTotal: '$42M', distributorPct: '85', directPct: '15',
+    topProducts: 'Single-use procedure kits, custom sterile packs, ISO-13485 surgical trays',
+    avgOrderValue: '$45000', salesCycle: '3-6 months',
+    distributorNames: 'Medline Industries, Cardinal Health, Owens & Minor',
+    distributorConcerns: 'Medline will pull our line if they see us going direct in their active territories. MFN pricing clauses to navigate.',
+    channelSafeApproach: 'Focus on SKUs distributors do not stock. Target accounts outside their active territories. Lead with custom kit capability.',
+    buyerRoles: 'Supply chain director, OR materials manager, VAC chair, procurement VP',
+    decisionProcess: 'Clinical champion gets VAC approval, procurement negotiates, supply chain onboards. 60-120 day process.',
+    objections: 'GPO contracts, switching costs, distributor handles this category',
+    currentMessage: 'ISO-13485 credentials, 70 years experience, custom kits, faster delivery',
+    winReasons: 'Better quality, custom kits distributor would not stock, faster delivery, personal relationships',
+    directRevenueTarget: '$2000000', budget: '$150000', timeframe: '12',
+    successLooks: '15 new direct accounts, repeatable outreach process, less Medline dependence in Southeast',
+    biggestChallenge: 'Never done outbound. No dedicated direct sales team. Only know 10 target accounts by name.'
+  };
+
+  document.getElementById('client-name-display').textContent = 'Trinity Sterile, Inc.';
+  document.getElementById('intake-status').innerHTML = '<span style="color:#4ade80;"><i class="ti ti-check"></i> Trinity Sterile sample loaded</span>';
+
+  // Pre-fill financial inputs
+  document.getElementById('i-avgContractValue').value = '45000';
+  document.getElementById('i-targetAccounts').value = '15';
+  document.getElementById('i-closeRate').value = '18';
+  document.getElementById('i-monthlyBudget').value = '12500';
+  document.getElementById('i-cpm').value = '400';
+  document.getElementById('i-salesCycle').value = '4';
+  document.getElementById('i-revenueTarget').value = '2000000';
+
+  // Pre-fill TAM
+  document.getElementById('i-tamTotal').value = '3800';
+  document.getElementById('i-tamTier1').value = '380';
+  document.getElementById('i-tamTier2').value = '1200';
+  document.getElementById('i-tamTypes').value = 'Hospitals, Surgery Centers, IDNs, Reference Labs, Physician Practices';
+  document.getElementById('i-icp').value = 'Mid-Atlantic and Southeast hospitals and surgery centers, 50-500 beds, with active sterile processing departments buying single-use kits. Triggered by VAC review cycles, GPO contract renewals, or dissatisfaction with distributor service levels.';
+
+  // Pre-fill levers
+  document.getElementById('i-wedgeOffer').value = 'Custom single-use kit trial — 90-day pilot program for one procedure type at no switching cost. Targets the SKUs Medline does not stock. Clinical team evaluates quality before any contract conversation.';
+  document.getElementById('i-intentStrategy').value = 'Identify OR materials managers and supply chain directors who are actively researching sterile processing solutions via LinkedIn engagement, Google search behaviour, and trade publication readership. Reach them with targeted content before the committee forms.';
+  document.getElementById('i-channelSafe').value = 'Lead exclusively with custom kit SKUs that Medline does not carry. Target accounts in geographies outside Medlines active territory. Frame direct as a complementary lane, not competitive — distributors handle commodity, Trinity handles custom.';
+  document.getElementById('i-brandEquity').value = 'Activate 70 years of manufacturing heritage and ISO-13485 certification as a trust signal in cold outreach. Most competitors are distributors, not manufacturers. Trinity is the source — position it that way.';
+
+  // Pre-fill top 15
+  const sampleAccounts = [
+    { name:'Johns Hopkins Hospital', type:'Hospital', revenue:'$85K/yr', contact:'OR Materials Manager', priority:'High' },
+    { name:'MedStar Health (IDN)', type:'IDN', revenue:'$180K/yr', contact:'Supply Chain Director', priority:'High' },
+    { name:'Chesapeake Surgical Center', type:'Surgery Center', revenue:'$45K/yr', contact:'Administrator', priority:'High' },
+    { name:'UPMC Presbyterian', type:'Hospital', revenue:'$95K/yr', contact:'Procurement VP', priority:'High' },
+    { name:'University of MD Medical Center', type:'Hospital', revenue:'$120K/yr', contact:'VAC Chair', priority:'High' },
+    { name:'Inova Fairfax Hospital', type:'Hospital', revenue:'$90K/yr', contact:'OR Director', priority:'Medium' },
+    { name:'WakeMed Raleigh', type:'Hospital', revenue:'$75K/yr', contact:'Supply Chain Manager', priority:'Medium' },
+    { name:'Sentara Healthcare', type:'IDN', revenue:'$160K/yr', contact:'VP Supply Chain', priority:'Medium' },
+    { name:'Anne Arundel Medical Center', type:'Hospital', revenue:'$55K/yr', contact:'Materials Manager', priority:'High' },
+    { name:'Novant Health', type:'IDN', revenue:'$140K/yr', contact:'Director Procurement', priority:'Medium' },
+    { name:'Duke University Hospital', type:'Hospital', revenue:'$110K/yr', contact:'OR Materials', priority:'Medium' },
+    { name:'Virginia Mason Medical', type:'Hospital', revenue:'$85K/yr', contact:'Supply Chain Lead', priority:'Low' },
+    { name:'CarolinaEast Medical Center', type:'Hospital', revenue:'$45K/yr', contact:'Administrator', priority:'Low' },
+    { name:'Peninsula Regional Medical', type:'Hospital', revenue:'$50K/yr', contact:'Purchasing Mgr', priority:'Medium' },
+    { name:'Bon Secours Richmond', type:'IDN', revenue:'$130K/yr', contact:'VP Operations', priority:'Medium' },
+  ];
+
+  state.top15 = sampleAccounts.map((a,i) => ({ rank:i+1, ...a }));
+  buildTop15Table();
+  updateCalcs();
+}
+
 
 // Init
 buildTop15Table();
