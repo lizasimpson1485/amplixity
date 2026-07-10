@@ -213,6 +213,46 @@ function saveStep() {
   })).filter(a => a.name.trim());
 }
 
+function loadSampleData() {
+  state.data = {
+    contactName: 'Michael Reeves', contactEmail: 'michael.reeves@trinitysterile.com',
+    contactTitle: 'VP of Sales & Marketing', contactPhone: '+1 410 555 0192',
+    companyName: 'Trinity Sterile, Inc.', website: 'trinitysterile.com',
+    industry: 'Medical devices — sterile processing & single-use kits',
+    headquarters: 'Salisbury, MD', founded: '1954', employees: '210',
+    revenue: '$42M',
+    currentRevenueTotal: '$42M', distributorPct: '85', directPct: '15',
+    topProducts: 'Single-use procedure kits, custom sterile packs — SKUs distributors do not lead with. Also ISO-13485 certified surgical trays.',
+    avgOrderValue: '$45,000/yr', salesCycle: '3-6 months',
+    accounts: [
+      { name: 'Johns Hopkins Hospital', type: 'Hospital', priority: 'High', relationship: 'Clinical contact in OR' },
+      { name: 'MedStar Health', type: 'IDN', priority: 'High', relationship: 'None — cold' },
+      { name: 'Chesapeake Surgical Center', type: 'Surgery Center', priority: 'High', relationship: 'Former customer' },
+      { name: 'University of Maryland Medical Center', type: 'Hospital', priority: 'Medium', relationship: 'Distributor currently serves them' },
+      { name: 'UPMC Presbyterian', type: 'Hospital', priority: 'Medium', relationship: 'None' }
+    ],
+    geographies: 'Mid-Atlantic primary (MD, VA, DC, PA), Southeast secondary',
+    accountCount: '15',
+    buyerRoles: 'Supply chain director, OR materials manager, value analysis committee chair, procurement VP. Clinical champion (OR nurse or surgeon) often needed to get VAC approval.',
+    decisionProcess: 'Clinical champion gets VAC approval, procurement negotiates contract, supply chain handles onboarding. Usually 2-3 internal stakeholders and 60-120 day process.',
+    objections: 'We already have a supplier through our GPO, switching costs are high, our distributor handles this category, pricing must go through committee.',
+    currentMessage: 'We lead with ISO-13485 quality credentials and 70 years of experience. We emphasise custom kits and faster delivery than national distributors.',
+    winReasons: 'Better quality, custom kits the distributor would not stock, faster delivery, personal relationship with clinical staff, pricing flexibility on direct contracts.',
+    distributorNames: 'Medline Industries, Cardinal Health, Owens & Minor',
+    distributorRelationship: 'Strong — important but not sole channel',
+    distributorConcerns: 'Medline will pull our line if they see us going direct in their active territories. Our pricing agreement has MFN clauses we need to navigate carefully.',
+    channelSafeApproach: 'Focus on SKUs our distributors do not stock. Target accounts outside their active territories first. Lead with custom kit capability — a category they cannot fulfil.',
+    directRevenueTarget: '$2,000,000', timeframe: '12', budget: '$150,000/yr',
+    successLooks: '15 new direct accounts, a repeatable outreach process our team can run without us, less dependence on Medline in the Southeast, and the financial model to justify a dedicated direct sales hire.',
+    biggestChallenge: 'We have never done outbound before. We do not have a dedicated direct sales team. We know maybe 10 target accounts by name — beyond that we do not know who to go after or how to reach the right person.'
+  };
+  state.step = 0;
+  renderStep();
+  const btn = document.querySelector('[onclick="loadSampleData()"]');
+  if (btn) { btn.innerHTML = '<i class="ti ti-check"></i> Sample data loaded'; btn.style.color = '#4ade80'; btn.style.borderColor = 'rgba(74,222,128,0.4)'; setTimeout(() => { btn.innerHTML = '<i class="ti ti-flask"></i> Use sample data'; btn.style.color = ''; btn.style.borderColor = ''; }, 3000); }
+}
+
+
 function renderStep() {
   updateProgress();
   const d = state.data;
@@ -220,6 +260,9 @@ function renderStep() {
 
   if (state.step === 0) {
     html = `
+      <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+        <button onclick="loadSampleData()" style="background:rgba(124,58,237,0.15);border:0.5px solid rgba(124,58,237,0.4);color:var(--purple-light);padding:7px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;"><i class="ti ti-flask"></i> Use sample data</button>
+      </div>
       <div class="section">
         <div class="section-label">Your details</div>
         <div class="section-desc">Who we're building this for — so we can personalise everything.</div>
