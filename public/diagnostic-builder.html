@@ -667,11 +667,296 @@ function downloadOutput(idx) {
 }
 
 function exportReport() {
-  const name = (state.intakeData?.companyName||'client').toLowerCase().replace(/\s+/g,'-');
-  let full = 'AMPLIXITY PIPELINE DIAGNOSTIC REPORT\nClient: '+(state.intakeData?.companyName||'N/A')+'\nGenerated: '+new Date().toLocaleDateString()+'\n'+'='.repeat(60)+'\n\n';
-  TABS.forEach((t,i) => { if(state.outputs[i]) full += t.title.toUpperCase()+'\n'+'-'.repeat(t.title.length)+'\n\n'+state.outputs[i]+'\n\n'+'='.repeat(60)+'\n\n'; });
-  const blob = new Blob([full],{type:'text/plain'});
-  const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name+'-pipeline-diagnostic.txt'; a.click(); URL.revokeObjectURL(a.href);
+  const d = state.intakeData || {};
+  const company = d.companyName || 'Client';
+  const f = getFinancials();
+  const t15 = state.top15.filter(a=>a.name);
+  const date = new Date().toLocaleDateString('en-US', {year:'numeric',month:'long',day:'numeric'});
+
+  // Build section content HTML
+  function secMD(text) {
+    if (!text) return '<p style="color:#8a8aaa;font-style:italic;">This section is being prepared.</p>';
+    const lines = text.split('\n');
+    let html = '', inList = false, inTable = false, tableHtml = '', headerDone = false;
+    for (let i=0;i<lines.length;i++) {
+      const line = lines[i];
+      if (line.trim().startsWith('|')) {
+        const cells = line.split('|').filter((_,j,a)=>j>0&&j<a.length-1).map(c=>c.trim());
+        if (cells.every(c=>/^[-:]+$/.test(c))) { headerDone=true; continue; }
+        if (!inTable) { inTable=true; tableHtml='<table style="width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;">'; headerDone=false; }
+        const tag = !headerDone?'th':'td';
+        tableHtml += '<tr>'+cells.map(c=>'<'+tag+' style="padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.08);'+(tag==='th'?'background:rgba(124,58,237,0.2);color:#b06ef3;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;':'')+'">'+ c.replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>') +'</'+tag+'>').join('')+'</tr>';
+        continue;
+      } else if (inTable) { html+=tableHtml+'</table>'; inTable=false; tableHtml=''; headerDone=false; }
+      if (inList && !line.match(/^[-*•]\s|^\d+\.\s/)) { html+='</ul>'; inList=false; }
+      if (line.startsWith('### ')) { html+='<h3 style="font-size:11px;font-weight:700;color:#b06ef3;text-transform:uppercase;letter-spacing:0.1em;margin:20px 0 10px;">'+line.slice(4)+'</h3>'; continue; }
+      if (line.startsWith('## ')) { html+='<h2 style="font-size:18px;font-weight:700;color:#fff;margin:24px 0 8px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.1);">'+line.slice(3)+'</h2>'; continue; }
+      if (line.startsWith('# ')) { html+='<h1 style="font-size:22px;font-weight:700;color:#fff;margin:24px 0 10px;">'+line.slice(2)+'</h1>'; continue; }
+      if (line.match(/^\d+\.\s+[A-Z]/)) { html+='<div style="font-size:12px;font-weight:700;color:#b06ef3;margin:20px 0 8px;text-transform:uppercase;letter-spacing:0.08em;">'+line+'</div>'; continue; }
+      if (line.match(/^[-*•]\s/)) { if(!inList){html+='<ul style="list-style:none;padding:0;margin:6px 0 14px;">'; inList=true;} html+='<li style="padding:6px 0 6px 20px;position:relative;border-bottom:1px solid rgba(255,255,255,0.04);font-size:14px;line-height:1.6;"><span style="position:absolute;left:0;color:#b06ef3;top:8px;font-size:11px;">→</span>'+line.replace(/^[-*•]\s/,'').replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff;">$1</strong>')+'</li>'; continue; }
+      if (line.match(/^---+$/)) { html+='<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:16px 0;">'; continue; }
+      if (line.trim()==='') { html+='<div style="height:10px;"></div>'; continue; }
+      html+='<p style="margin:0 0 10px;font-size:14px;line-height:1.75;color:#d0d0e0;">'+line.replace(/\*\*(.+?)\*\*/g,'<strong style="color:#fff;">$1</strong>')+'</p>';
+    }
+    if (inTable) html+=tableHtml+'</table>';
+    if (inList) html+='</ul>';
+    return html;
+  }
+
+  // Stat card HTML
+  function statCard(val, label, color) {
+    const colors = {green:'#22c55e', amber:'#f59e0b', red:'#ef4444', purple:'#b06ef3'};
+    const c = colors[color]||'#b06ef3';
+    return '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-top:3px solid '+c+';border-radius:10px;padding:16px 18px;"><div style="font-size:26px;font-weight:700;color:#fff;line-height:1.1;margin-bottom:4px;">'+val+'</div><div style="font-size:12px;color:#8a8aaa;line-height:1.3;">'+label+'</div></div>';
+  }
+
+  // Account cards
+  const accountCardsHTML = t15.slice(0,15).map((a,i) =>
+    '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-left:4px solid #7c3aed;border-radius:10px;padding:16px 18px;margin-bottom:10px;">' +
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<div style="width:26px;height:26px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;">'+(i+1)+'</div>' +
+        '<div style="font-size:15px;font-weight:600;color:#fff;">'+a.name+'</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:6px;">' +
+        '<span style="font-size:10px;font-weight:700;background:rgba(124,58,237,0.2);color:#b06ef3;padding:3px 8px;border-radius:8px;">'+a.type+'</span>' +
+        '<span style="font-size:10px;font-weight:700;padding:3px 8px;border-radius:8px;background:rgba('+(a.priority==='High'?'239,68,68':a.priority==='Medium'?'245,158,11':'34,197,94')+',0.15);color:'+(a.priority==='High'?'#f87171':a.priority==='Medium'?'#fbbf24':'#4ade80')+';">'+a.priority+'</span>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;font-size:13px;">' +
+      '<div><div style="color:#8a8aaa;font-size:11px;margin-bottom:2px;">Est. value</div><div style="color:#fff;font-weight:500;">'+(a.revenue||'TBD')+'</div></div>' +
+      '<div><div style="color:#8a8aaa;font-size:11px;margin-bottom:2px;">Entry contact</div><div style="color:#fff;font-weight:500;">'+(a.contact||'TBD')+'</div></div>' +
+      '<div><div style="color:#8a8aaa;font-size:11px;margin-bottom:2px;">Priority</div><div style="color:#fff;font-weight:500;">'+a.priority+'</div></div>' +
+    '</div></div>'
+  ).join('');
+
+  // Lever cards
+  const levers = [
+    {icon:'🎯', label:'A', title:'Wedge Offer', color:'#7c3aed', text: document.getElementById('i-wedgeOffer')?.value||''},
+    {icon:'🔍', label:'B', title:'Contact-Level Intent', color:'#8ab0e8', text: document.getElementById('i-intentStrategy')?.value||''},
+    {icon:'🛡️', label:'C', title:'Channel-Safe Lane', color:'#22c55e', text: document.getElementById('i-channelSafe')?.value||''},
+    {icon:'⭐', label:'D', title:'Brand Equity Activation', color:'#f59e0b', text: document.getElementById('i-brandEquity')?.value||''},
+  ];
+  const leversHTML = levers.map(l =>
+    '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-top:3px solid '+l.color+';border-radius:10px;padding:20px 22px;">' +
+    '<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">' +
+      '<div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;font-size:18px;">'+l.icon+'</div>' +
+      '<div><div style="font-size:10px;font-weight:700;color:'+l.color+';text-transform:uppercase;letter-spacing:0.08em;">Lever '+l.label+'</div><div style="font-size:14px;font-weight:700;color:#fff;">'+l.title+'</div></div>' +
+    '</div>' +
+    '<div style="font-size:13px;line-height:1.7;color:#c0c0d8;">'+l.text+'</div>' +
+    '</div>'
+  ).join('');
+
+  const tam1 = document.getElementById('i-tamTotal').value||'—';
+  const tam2 = document.getElementById('i-tamTier1').value||'—';
+  const tam3 = document.getElementById('i-tamTier2').value||'—';
+
+  const reportHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pipeline Diagnostic — ${company}</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"><\/script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Space Grotesk',-apple-system,sans-serif;background:#0d0d1a;color:#f0f0f5;line-height:1.6;}
+  .no-print{} @media print{.no-print{display:none!important;} body{background:#fff;color:#111;} .section{background:#fff!important;border-color:#e5e7eb!important;} .hero{background:#f9fafb!important;}}
+</style>
+</head>
+<body>
+
+<!-- Print button -->
+<div class="no-print" style="position:fixed;bottom:24px;right:24px;z-index:100;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+  <button onclick="window.print()" style="background:#7c3aed;border:none;color:#fff;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;box-shadow:0 4px 20px rgba(124,58,237,0.4);">🖨️ Print / Save PDF</button>
+</div>
+
+<!-- Cover -->
+<div style="min-height:100vh;background:linear-gradient(135deg,#0d0d1a 0%,#1a0a2e 60%,#0d1a2e 100%);display:flex;flex-direction:column;justify-content:center;padding:60px 80px;position:relative;overflow:hidden;">
+  <div style="position:absolute;top:0;right:0;width:600px;height:600px;background:radial-gradient(circle,rgba(124,58,237,0.15) 0%,transparent 70%);pointer-events:none;"></div>
+  <div style="position:absolute;bottom:0;left:0;width:400px;height:400px;background:radial-gradient(circle,rgba(138,176,232,0.08) 0%,transparent 70%);pointer-events:none;"></div>
+  <div style="max-width:760px;position:relative;z-index:1;">
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.15em;text-transform:uppercase;color:#b06ef3;margin-bottom:32px;">Amplixity · Go-to-Market Intelligence Workshop</div>
+    <div style="font-size:13px;color:#8a8aaa;margin-bottom:16px;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;">Pipeline Diagnostic · Prepared for</div>
+    <div style="font-size:52px;font-weight:700;color:#fff;line-height:1.1;letter-spacing:-0.02em;margin-bottom:16px;">${company}</div>
+    <div style="font-size:20px;color:#b06ef3;font-weight:500;margin-bottom:40px;">Your custom plan to break into direct accounts.</div>
+    <div style="display:flex;gap:40px;flex-wrap:wrap;">
+      <div><div style="font-size:11px;color:#8a8aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Industry</div><div style="font-size:14px;color:#fff;font-weight:500;">${d.industry||'—'}</div></div>
+      <div><div style="font-size:11px;color:#8a8aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Revenue</div><div style="font-size:14px;color:#fff;font-weight:500;">${d.revenue||d.currentRevenueTotal||'—'}</div></div>
+      <div><div style="font-size:11px;color:#8a8aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Direct target (yr 1)</div><div style="font-size:14px;color:#fff;font-weight:500;">${d.directRevenueTarget||'—'}</div></div>
+      <div><div style="font-size:11px;color:#8a8aaa;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Prepared</div><div style="font-size:14px;color:#fff;font-weight:500;">${date}</div></div>
+    </div>
+    <div style="margin-top:48px;padding-top:32px;border-top:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:12px;">
+      <div style="background:linear-gradient(135deg,#7c3aed,#b06ef3);width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#fff;">A</div>
+      <div><div style="font-size:14px;font-weight:700;color:#fff;">Amplixity</div><div style="font-size:12px;color:#8a8aaa;">amplixity.com · Confidential</div></div>
+      <div style="margin-left:auto;font-size:13px;color:#8a8aaa;font-style:italic;">The entire plan is yours to keep.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Nav bar -->
+<div class="no-print" style="position:sticky;top:0;z-index:50;background:rgba(13,13,26,0.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,0.08);padding:0 40px;display:flex;gap:0;overflow-x:auto;">
+  ${TABS.map((t,i)=>'<a href="#section-'+i+'" style="padding:14px 18px;font-size:13px;font-weight:500;color:rgba(255,255,255,0.5);text-decoration:none;white-space:nowrap;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;transition:color 0.15s;" onmouseover="this.style.color=\'#fff\'" onmouseout="this.style.color=\'rgba(255,255,255,0.5)\'">'+t.title+'</a>').join('')}
+</div>
+
+<!-- Sections -->
+${TABS.map((tab,i) => {
+  const text = state.outputs[i]||'';
+  let sectionContent = '';
+
+  if (i===0) { // TAM
+    sectionContent = '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;">'+
+      statCard(tam1,'Total addressable accounts','green')+
+      statCard(tam2,'Tier 1 — best fit','purple')+
+      statCard(tam3,'Tier 2 — good fit','')+
+      statCard(t15.length+'/15','Named targets identified','amber')+
+    '</div>'+
+    '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:20px;margin-bottom:28px;height:280px;display:flex;align-items:center;justify-content:center;" id="tam-chart-wrap">'+
+      '<canvas id="rpt-tam-chart"></canvas>'+
+    '</div>';
+  } else if (i===1) { // Top 15
+    sectionContent = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;">'+
+      statCard(t15.length,'Named target accounts','')+
+      statCard(t15.filter(a=>a.priority==='High').length,'High priority','red')+
+      statCard('$'+Math.round(t15.reduce((s,a)=>s+parseFloat((a.revenue||'0').replace(/[^0-9.]/g,'')||0),0)/1000)+'K','Combined revenue potential','green')+
+    '</div>'+
+    accountCardsHTML;
+  } else if (i===2) { // Financial
+    sectionContent = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px;">'+
+      statCard('$'+Math.round(f.totalRevenue/1000)+'K','Year 1 revenue target','green')+
+      statCard(f.meetingsNeeded,'Qualified meetings needed','')+
+      statCard('$'+Math.round(f.totalSpend/1000)+'K','Total investment yr 1','')+
+      statCard(f.roi+'%','Projected ROI','green')+
+      statCard('M'+f.paybackMonth,'Payback month','amber')+
+      statCard('5–10×','Guaranteed minimum return','purple')+
+    '</div>'+
+    '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:20px;margin-bottom:28px;height:300px;">'+
+      '<canvas id="rpt-fin-chart"></canvas>'+
+    '</div>';
+  } else if (i===3) { // Levers
+    sectionContent = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px;">'+leversHTML+'</div>';
+  } else if (i===4) { // Final Plan
+    const stages = [
+      {num:'01',title:'Workshop',period:'Day 1',color:'#7c3aed',desc:'Deep dive on goals, best-fit accounts, buyers, objections, competitors, and how to sell direct without disrupting distributors.'},
+      {num:'02',title:'The Build',period:'Days 2–12',color:'#8ab0e8',desc:'TAM mapping, account verification, message and competitive analysis, financial modelling, and Core 4 scoring — assembled into your blueprint.'},
+      {num:'03',title:'Strategy Review',period:'Day ~14',color:'#4ade80',desc:'Walk the findings together: your 12-month forecast, the roadmap, and the budget on a scaling timeline. You leave with the full plan in hand.'},
+    ];
+    const stagesHTML = stages.map(s =>
+      '<div style="flex:1;background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-top:4px solid '+s.color+';border-radius:12px;padding:24px 22px;">' +
+        '<div style="font-size:11px;font-weight:700;color:'+s.color+';text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;">Step '+s.num+'</div>' +
+        '<div style="font-size:18px;font-weight:700;color:#fff;margin-bottom:8px;">'+s.title+'</div>' +
+        '<div style="font-size:11px;color:#8a8aaa;margin-bottom:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;">'+s.period+'</div>' +
+        '<div style="font-size:13px;color:#c0c0d8;line-height:1.65;">'+s.desc+'</div>' +
+      '</div>'
+    ).join('');
+
+    const q1Items = ['Lock target account list','Activate wedge offer outreach','Launch LinkedIn + Google campaigns','First qualified meetings booked'];
+    const q2Items = ['Pipeline at 40% of year target','Close first 3–5 direct accounts','Refine message based on wins','Referrals from new direct accounts begin'];
+    const q3Items = ['Revenue covers investment','Scale budget by 2×','Hire funded by new direct revenue','Outreach runs with minimal founder input'];
+    const q4Items = ['15+ direct accounts closed','Owned channel fully operational','Distributor dependency reduced by 30%+','Full execution-ready plan handed over'];
+
+    const roadmapHTML = [
+      {q:'Q1',label:'Foundation & launch',color:'#7c3aed',items:q1Items},
+      {q:'Q2',label:'Pipeline & first wins',color:'#8ab0e8',items:q2Items},
+      {q:'Q3',label:'Scale & profitability',color:'#22c55e',items:q3Items},
+      {q:'Q4',label:'Owned channel',color:'#4ade80',items:q4Items},
+    ].map(q =>
+      '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px 20px;">' +
+        '<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">' +
+          '<div style="width:36px;height:36px;border-radius:8px;background:'+q.color+';display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">'+q.q+'</div>' +
+          '<div style="font-size:14px;font-weight:600;color:#fff;">'+q.label+'</div>' +
+        '</div>' +
+        q.items.map(item =>
+          '<div style="display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">' +
+          '<span style="color:'+q.color+';font-size:11px;margin-top:3px;flex-shrink:0;">→</span>' +
+          '<span style="font-size:13px;color:#c0c0d8;line-height:1.5;">'+item+'</span></div>'
+        ).join('') +
+      '</div>'
+    ).join('');
+
+    const guaranteeHTML =
+      '<div style="background:linear-gradient(135deg,rgba(124,58,237,0.15),rgba(138,176,232,0.08));border:1px solid rgba(124,58,237,0.3);border-radius:14px;padding:32px 36px;text-align:center;margin-bottom:28px;">' +
+        '<div style="font-size:48px;font-weight:700;color:#fff;margin-bottom:8px;">5–10×</div>' +
+        '<div style="font-size:18px;font-weight:600;color:#b06ef3;margin-bottom:16px;">Minimum return — or your money back.</div>' +
+        '<div style="font-size:14px;color:#8a8aaa;max-width:520px;margin:0 auto;line-height:1.7;">If we do the work together and cannot show you a clear path to at least 5–10× on the diagnostic, you get every dollar back. No conditions. No fine print.</div>' +
+        '<div style="display:flex;justify-content:center;gap:32px;margin-top:24px;flex-wrap:wrap;">' +
+          '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:#fff;">$3,500</div><div style="font-size:12px;color:#8a8aaa;">One-time fee</div></div>' +
+          '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:#fff;">14 days</div><div style="font-size:12px;color:#8a8aaa;">To your full plan</div></div>' +
+          '<div style="text-align:center;"><div style="font-size:20px;font-weight:700;color:#fff;">100%</div><div style="font-size:12px;color:#8a8aaa;">Yours to keep</div></div>' +
+        '</div>' +
+      '</div>';
+
+    const nextStepsHTML =
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px;">' +
+        ['Lock your Step 1 workshop while the team is together','Review this report with your leadership team','Reply to confirm your Day 14 strategy review date'].map((step,i) =>
+          '<div style="background:#1a1a2e;border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:18px 20px;display:flex;gap:12px;align-items:flex-start;">' +
+            '<div style="width:28px;height:28px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0;">'+(i+1)+'</div>' +
+            '<div style="font-size:13px;color:#c0c0d8;line-height:1.6;padding-top:3px;">'+step+'</div>' +
+          '</div>'
+        ).join('') +
+      '</div>';
+
+    sectionContent =
+      guaranteeHTML +
+      '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:14px;">The process</div>' +
+      '<div style="display:flex;gap:12px;margin-bottom:28px;">'+stagesHTML+'</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:14px;">12-month roadmap</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px;">'+roadmapHTML+'</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:14px;">Next steps</div>' +
+      nextStepsHTML;
+  }
+
+  return '<div id="section-'+i+'" style="padding:60px 80px;border-bottom:1px solid rgba(255,255,255,0.06);">'+
+    '<div style="max-width:880px;margin:0 auto;">'+
+    '<div style="font-size:11px;font-weight:700;color:#b06ef3;text-transform:uppercase;letter-spacing:0.12em;margin-bottom:8px;">0'+(i+1)+' / 0'+TABS.length+'</div>'+
+    '<div style="font-size:32px;font-weight:700;color:#fff;letter-spacing:-0.02em;margin-bottom:32px;">'+tab.title+'</div>'+
+    sectionContent +
+    (text ? '<div style="background:#13131f;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:28px 32px;">'+secMD(text)+'</div>' : '') +
+    '</div></div>';
+}).join('')}
+
+<!-- Footer -->
+<div style="padding:40px 80px;background:#13131f;border-top:1px solid rgba(255,255,255,0.08);">
+  <div style="max-width:880px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px;">
+    <div style="font-size:13px;color:#8a8aaa;">Prepared by Amplixity for ${company} · ${date}</div>
+    <div style="font-size:13px;color:#8a8aaa;">amplixity.com · Confidential</div>
+    <div style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.3);border-radius:8px;padding:10px 16px;font-size:13px;color:#b06ef3;font-weight:500;">5–10× return guaranteed or your money back</div>
+  </div>
+</div>
+
+<script>
+// TAM donut
+(function() {
+  const ctx = document.getElementById('rpt-tam-chart');
+  if (!ctx || !window.Chart) return;
+  const t1 = parseInt('${document.getElementById('i-tamTier1').value||0}');
+  const t2 = parseInt('${document.getElementById('i-tamTier2').value||0}');
+  const total = parseInt('${document.getElementById('i-tamTotal').value||0}');
+  const other = Math.max(0,total-t1-t2);
+  new Chart(ctx,{type:'doughnut',data:{labels:['Tier 1','Tier 2','Tier 3'],datasets:[{data:[t1,t2,other],backgroundColor:['#7c3aed','#8ab0e8','rgba(255,255,255,0.08)'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'right',labels:{color:'#f0f0f5',font:{size:13},padding:16}}}}});
+})();
+// Financial chart
+(function() {
+  const ctx = document.getElementById('rpt-fin-chart');
+  if (!ctx || !window.Chart) return;
+  const totalRev = ${f.totalRevenue};
+  const budget = ${f.budget};
+  const ramp = [0.3,0.4,0.5,0.6,0.7,0.8,0.9,1,1,1.1,1.2,1.3];
+  const monthly = ramp.map(r=>Math.round(totalRev/12*r));
+  const cumRev = monthly.reduce((acc,v,i)=>{acc.push((acc[i-1]||0)+v);return acc;},[]);
+  const cumSpend = Array.from({length:12},(_,i)=>budget*(i+1));
+  new Chart(ctx,{type:'bar',data:{labels:['M1','M2','M3','M4','M5','M6','M7','M8','M9','M10','M11','M12'],datasets:[{label:'Monthly Revenue',data:monthly,backgroundColor:'rgba(124,58,237,0.8)',borderRadius:4,order:2},{label:'Cumulative Revenue',data:cumRev,type:'line',borderColor:'#4ade80',backgroundColor:'transparent',tension:0.4,pointRadius:3,yAxisID:'y1',order:1},{label:'Cumulative Spend',data:cumSpend,type:'line',borderColor:'#f59e0b',backgroundColor:'transparent',tension:0.4,pointRadius:3,borderDash:[4,4],yAxisID:'y1',order:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#f0f0f5',font:{size:11}}}},scales:{x:{ticks:{color:'#8a8aaa'},grid:{color:'rgba(255,255,255,0.04)'}},y:{ticks:{color:'#8a8aaa',callback:v=>'$'+Math.round(v/1000)+'K'},grid:{color:'rgba(255,255,255,0.04)'}},y1:{position:'right',ticks:{color:'#4ade80',callback:v=>'$'+Math.round(v/1000)+'K'},grid:{display:false}}}}});
+})();
+<\/script>
+</body>
+</html>`;
+
+  const blob = new Blob([reportHTML], {type:'text/html'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const fname = company.toLowerCase().replace(/[\s,\.]+/g,'-').replace(/[^a-z0-9-]/g,'');
+  a.href = url; a.download = fname+'-pipeline-diagnostic.html'; a.click();
+  URL.revokeObjectURL(url);
 }
 
 function loadSampleIntake() {
